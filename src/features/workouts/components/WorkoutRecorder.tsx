@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { VoiceInput } from '@/components/ui/VoiceInput';
+import { ExerciseSwap } from '@/components/ui/ExerciseSwap';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -12,12 +13,100 @@ interface WorkoutRecorderProps {
     exercises: any[];
 }
 
-export function WorkoutRecorder({ workout, exercises }: WorkoutRecorderProps) {
+interface AlternativeExercise {
+    id: string;
+    name: string;
+    muscle_group: string;
+}
+
+export function WorkoutRecorder({ workout, exercises: initialExercises }: WorkoutRecorderProps) {
     const [loading, setLoading] = useState(false);
+    const [exercises, setExercises] = useState(initialExercises);
+    const [alternatives, setAlternatives] = useState<Record<string, AlternativeExercise[]>>({});
     const router = useRouter();
     const supabase = createClient();
 
     const [logs, setLogs] = useState<Record<string, Record<number, { weight: string, reps: string }>>>({});
+
+    // Fetch alternatives for all exercises
+    useEffect(() => {
+        const fetchAlternatives = async () => {
+            const exerciseIds = exercises.map(e => e.exercise.id);
+
+            // Get exercises with their alternatives
+            const { data: exercisesWithAlts } = await supabase
+                .from('exercises')
+                .select('id, alternatives')
+                .in('id', exerciseIds);
+
+            if (!exercisesWithAlts) return;
+
+            // Get all alternative IDs
+            const allAltIds = new Set<string>();
+            exercisesWithAlts.forEach(e => {
+                (e.alternatives || []).forEach((id: string) => allAltIds.add(id));
+            });
+
+            // Fetch alternative exercise details
+            const { data: altExercises } = await supabase
+                .from('exercises')
+                .select('id, name, muscle_group')
+                .in('id', Array.from(allAltIds));
+
+            // Map alternatives by exercise ID
+            const altMap: Record<string, AlternativeExercise[]> = {};
+            exercisesWithAlts.forEach(e => {
+                altMap[e.id] = (e.alternatives || [])
+                    .map((altId: string) => altExercises?.find(a => a.id === altId))
+                    .filter(Boolean) as AlternativeExercise[];
+            });
+
+            setAlternatives(altMap);
+        };
+
+        fetchAlternatives();
+    }, [exercises, supabase]);
+
+    const handleSwap = async (workoutExerciseId: string, originalExerciseId: string, newExerciseId: string) => {
+        // Fetch new exercise details
+        const { data: newExercise } = await supabase
+            .from('exercises')
+            .select('*')
+            .eq('id', newExerciseId)
+            .single();
+
+        if (!newExercise) return;
+
+        // Update local state - swap the exercise
+        setExercises(prev => prev.map(item => {
+            if (item.id === workoutExerciseId) {
+                return {
+                    ...item,
+                    exercise: newExercise
+                };
+            }
+            return item;
+        }));
+
+        // Also fetch alternatives for the new exercise
+        const { data: newExWithAlts } = await supabase
+            .from('exercises')
+            .select('id, alternatives')
+            .eq('id', newExerciseId)
+            .single();
+
+        if (newExWithAlts?.alternatives?.length) {
+            const { data: altExercises } = await supabase
+                .from('exercises')
+                .select('id, name, muscle_group')
+                .in('id', newExWithAlts.alternatives);
+
+            setAlternatives(prev => ({
+                ...prev,
+                [newExerciseId]: altExercises as AlternativeExercise[]
+            }));
+        }
+    };
 
     const handleLogChange = (exerciseId: string, setNumber: number, field: 'weight' | 'reps', value: string) => {
         setLogs(prev => ({
@@ -100,7 +189,14 @@ export function WorkoutRecorder({ workout, exercises }: WorkoutRecorderProps) {
                     </div>
 
                     <div className="relative z-10">
-                        <h3 className="text-lg sm:text-xl font-semibold text-white mb-1">{item.exercise.name}</h3>
+                        <div className="flex justify-between items-start mb-1">
+                            <h3 className="text-lg sm:text-xl font-semibold text-white">{item.exercise.name}</h3>
+                            <ExerciseSwap
+                                currentExercise={item.exercise}
+                                alternatives={alternatives[item.exercise.id] || []}
+                                onSwap={(newId) => handleSwap(item.id, item.exercise.id, newId)}
+                            />
+                        </div>
                         <p className="text-[var(--text-secondary)] text-[10px] sm:text-xs font-medium uppercase mb-4 sm:mb-6 tracking-wide">
                             Target: {item.sets} Sets × {item.reps} Reps
                         </p>
