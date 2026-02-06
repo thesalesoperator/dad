@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { CompleteSessionButton } from '@/features/workouts/components/CompleteSessionButton';
+import { WorkoutRecorder } from '@/features/workouts/components/WorkoutRecorder';
 
 export default async function WorkoutPage({ params }: { params: { id: string } }) {
     const supabase = await createClient();
@@ -48,44 +48,7 @@ export default async function WorkoutPage({ params }: { params: { id: string } }
                 </div>
             </header>
 
-            <div className="space-y-6 relative z-10">
-                {exercises.map((item: any, index: number) => (
-                    <Card key={item.id} className="relative group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 text-8xl font-bold text-white pointer-events-none select-none">
-                            {index + 1}
-                        </div>
-
-                        <div className="relative z-10">
-                            <h3 className="text-xl font-semibold text-white mb-1">{item.exercise.name}</h3>
-                            <div className="flex gap-4 text-xs font-medium text-[var(--text-secondary)] uppercase mb-4 tracking-wide">
-                                <span>{item.sets} Sets</span>
-                                <span>{item.reps} Reps</span>
-                                <span>{item.rest_seconds}s Rest</span>
-                            </div>
-
-                            <div className="grid grid-cols-[1fr,1fr,auto] gap-3 items-center">
-                                <div className="bg-white/5 rounded-[var(--radius-sm)] p-3 text-center border border-white/10 focus-within:border-[var(--accent-primary)] transition-colors">
-                                    <span className="block text-[10px] text-[var(--text-secondary)] uppercase font-semibold mb-1">LBS</span>
-                                    <input type="number" placeholder="-" className="w-full bg-transparent text-center text-lg text-white font-medium outline-none placeholder:text-white/20" />
-                                </div>
-                                <div className="bg-white/5 rounded-[var(--radius-sm)] p-3 text-center border border-white/10 focus-within:border-[var(--accent-primary)] transition-colors">
-                                    <span className="block text-[10px] text-[var(--text-secondary)] uppercase font-semibold mb-1">REPS</span>
-                                    <input type="number" placeholder="-" className="w-full bg-transparent text-center text-lg text-white font-medium outline-none placeholder:text-white/20" />
-                                </div>
-                                <button className="h-full aspect-square bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-[var(--radius-sm)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all flex items-center justify-center">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </Card>
-                ))}
-            </div>
-
-            <div className="fixed bottom-6 left-6 right-6 z-20">
-                <CompleteSessionButton workoutId={id} />
-            </div>
+            <WorkoutRecorder workout={workout} exercises={exercises} />
         </div>
     );
 }
