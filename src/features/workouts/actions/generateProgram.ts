@@ -137,26 +137,26 @@ export async function generateProgram(userId: string, userData: UserData) {
     let workoutPlan: WorkoutPlanItem[] = [];
     if (userData.days_per_week <= 3) {
         const fullBodyPlan: WorkoutPlanItem[] = [
-            { name: 'Full Body A', template: 'full_body_a' },
-            { name: 'Full Body B', template: 'full_body_b' },
-            { name: 'Full Body C', template: 'full_body_c' },
+            { name: 'The Foundation', template: 'full_body_a' },
+            { name: 'Power Surge', template: 'full_body_b' },
+            { name: 'The Finisher', template: 'full_body_c' },
         ];
         workoutPlan = fullBodyPlan.slice(0, userData.days_per_week);
     } else if (userData.days_per_week === 4) {
         workoutPlan = [
-            { name: 'Upper A', template: 'upper_push_a' },
-            { name: 'Lower A', template: 'lower_a' },
-            { name: 'Upper B', template: 'upper_push_b' },
-            { name: 'Lower B', template: 'lower_b' },
+            { name: 'Iron Press', template: 'upper_push_a' },
+            { name: 'Squat & Drive', template: 'lower_a' },
+            { name: 'Cable & Steel', template: 'upper_push_b' },
+            { name: 'Deadlift Day', template: 'lower_b' },
         ];
     } else {
         workoutPlan = [
-            { name: 'Push A', template: 'upper_push_a' },
-            { name: 'Pull A', template: 'upper_pull_a' },
-            { name: 'Legs A', template: 'lower_a' },
-            { name: 'Push B', template: 'upper_push_b' },
-            { name: 'Pull B', template: 'upper_pull_b' },
-            { name: 'Legs B', template: 'lower_b' },
+            { name: 'Press Day', template: 'upper_push_a' },
+            { name: 'Row & Grow', template: 'upper_pull_a' },
+            { name: 'Squat & Drive', template: 'lower_a' },
+            { name: 'Incline & Isolate', template: 'upper_push_b' },
+            { name: 'Back & Biceps', template: 'upper_pull_b' },
+            { name: 'Deadlift Day', template: 'lower_b' },
         ];
         if (userData.days_per_week < 6) workoutPlan = workoutPlan.slice(0, userData.days_per_week);
     }
