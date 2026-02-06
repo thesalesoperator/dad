@@ -73,15 +73,21 @@ export default async function DashboardPage() {
             </header>
 
             {/* Stats Row */}
-            <section className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8 relative z-10">
-                <Card className="bg-white/5 border-white/10 text-center py-4 sm:py-6">
-                    <p className="text-[var(--text-secondary)] text-[10px] sm:text-xs uppercase font-bold tracking-wider">Workouts Completed</p>
-                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-1 sm:mt-2">{totalWorkoutsCompleted}</p>
+            <section className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8 relative z-10">
+                <Card className="bg-white/5 border-white/10 text-center py-3 sm:py-6">
+                    <p className="text-[var(--text-secondary)] text-[8px] sm:text-xs uppercase font-bold tracking-wider">Workouts</p>
+                    <p className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mt-1">{totalWorkoutsCompleted}</p>
                 </Card>
-                <Card className="bg-white/5 border-white/10 text-center py-4 sm:py-6">
-                    <p className="text-[var(--text-secondary)] text-[10px] sm:text-xs uppercase font-bold tracking-wider">Current Streak</p>
-                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--accent-primary)] mt-1 sm:mt-2">{Math.min(totalWorkoutsCompleted, 7)}<span className="text-lg sm:text-xl text-[var(--text-secondary)]"> days</span></p>
+                <Card className="bg-white/5 border-white/10 text-center py-3 sm:py-6">
+                    <p className="text-[var(--text-secondary)] text-[8px] sm:text-xs uppercase font-bold tracking-wider">Streak</p>
+                    <p className="text-2xl sm:text-4xl lg:text-5xl font-bold text-[var(--accent-primary)] mt-1">{Math.min(totalWorkoutsCompleted, 7)}<span className="text-sm sm:text-xl text-[var(--text-secondary)]">d</span></p>
                 </Card>
+                <Link href="/progress">
+                    <Card className="bg-white/5 border-white/10 text-center py-3 sm:py-6 hover:border-[var(--accent-secondary)] hover:bg-[var(--accent-secondary)]/5 transition-all cursor-pointer h-full flex flex-col justify-center">
+                        <p className="text-[var(--text-secondary)] text-[8px] sm:text-xs uppercase font-bold tracking-wider">Lifts</p>
+                        <p className="text-[var(--accent-secondary)] text-lg sm:text-2xl font-bold mt-1">VIEW →</p>
+                    </Card>
+                </Link>
             </section>
 
             {/* Workout of the Day */}
