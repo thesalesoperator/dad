@@ -43,9 +43,9 @@ const EXERCISE_TEMPLATES = {
     'lower_a': [
         { name: 'Barbell Back Squat', rationale: 'King of lower body exercises. Maximal loading.' },
         { name: 'Romanian Deadlift', rationale: 'Hip hinge for posterior chain development.' },
-        { name: 'Walking Lunges', rationale: 'Unilateral led work improving balance.' },
-        { name: 'Leg Curl', rationale: 'Isolated hamstring development.' },
-        { name: 'Standing Calf Raise', rationale: 'Gastrocnemius focus.' },
+        { name: 'Walking Lunges', rationale: 'Unilateral leg work improving balance.' },
+        { name: 'Lying Leg Curl', rationale: 'Isolated hamstring development.' },
+        { name: 'Standing Calf Raise Machine', rationale: 'Gastrocnemius focus.' },
     ],
     'lower_b': [
         { name: 'Front Squat', rationale: 'Quad-dominant squat variation.' },
@@ -73,7 +73,7 @@ const EXERCISE_TEMPLATES = {
         { name: 'Dumbbell Bench Press', rationale: 'Chest hypertrophy.' },
         { name: 'Cable Row', rationale: 'Back thickness.' },
         { name: 'Lateral Raise', rationale: 'Shoulder isolation.' },
-        { name: 'Leg Curl', rationale: 'Hamstring isolation.' },
+        { name: 'Lying Leg Curl', rationale: 'Hamstring isolation.' },
     ],
 };
 
@@ -86,6 +86,21 @@ interface WorkoutPlanItem {
 
 export async function generateProgram(userId: string, userData: UserData) {
     const supabase = await createClient();
+
+    // 0. Clean up old workouts to prevent duplicates
+    // Get existing workout IDs for this user
+    const { data: existingWorkouts } = await supabase
+        .from('workouts')
+        .select('id')
+        .eq('user_id', userId);
+
+    if (existingWorkouts && existingWorkouts.length > 0) {
+        const workoutIds = existingWorkouts.map(w => w.id);
+        // Delete workout_exercises for old workouts
+        await supabase.from('workout_exercises').delete().in('workout_id', workoutIds);
+        // Delete old workouts (workout_logs are preserved as historical records)
+        await supabase.from('workouts').delete().eq('user_id', userId);
+    }
 
     // 1. Fetch all exercises
     const { data: allExercises } = await supabase.from('exercises').select('*');
@@ -176,7 +191,8 @@ export async function generateProgram(userId: string, userData: UserData) {
             });
         }
 
-        await supabase.from('workout_exercises').insert(workoutExercises);
+        const { error: weError } = await supabase.from('workout_exercises').insert(workoutExercises);
+        if (weError) throw new Error(`Failed to add exercises to ${workout.name}: ${weError.message}`);
     }
 }
 
