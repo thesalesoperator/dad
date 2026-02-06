@@ -8,12 +8,19 @@ import { Card } from '@/components/ui/Card';
 import { generateProgram } from '@/features/workouts/actions/generateProgram';
 
 const STEPS = [
-    // ... (rest of constants)
     { id: 'name', title: 'WHO ARE YOU?', subtitle: 'First things first.' },
     { id: 'stats', title: 'VITALS', subtitle: 'Calibration data.' },
     { id: 'experience', title: 'HISTORY', subtitle: 'Honesty required.' },
+    { id: 'equipment', title: 'YOUR GYM', subtitle: 'What do you have access to?' },
     { id: 'availability', title: 'COMMITMENT', subtitle: 'Be realistic.' },
     { id: 'goals', title: 'MISSION', subtitle: 'Target acquisition.' },
+];
+
+const EQUIPMENT_OPTIONS = [
+    { id: 'full_gym', label: 'FULL GYM', description: 'Barbells, machines, cables', icon: '🏋️' },
+    { id: 'dumbbells', label: 'DUMBBELLS ONLY', description: 'Home gym with dumbbells', icon: '💪' },
+    { id: 'bodyweight', label: 'BODYWEIGHT', description: 'No equipment needed', icon: '🤸' },
+    { id: 'bands', label: 'RESISTANCE BANDS', description: 'Portable training', icon: '🎯' },
 ];
 
 export function OnboardingWizard() {
@@ -23,6 +30,7 @@ export function OnboardingWizard() {
         age: '',
         weight: '',
         experience: 'beginner',
+        equipment: 'full_gym',
         daysPerWeek: 3,
         goal: 'strength'
     });
@@ -37,10 +45,6 @@ export function OnboardingWizard() {
         }
     };
 
-
-
-    // ... inside component
-
     const finishOnboarding = async () => {
         setLoading(true);
         try {
@@ -48,6 +52,14 @@ export function OnboardingWizard() {
             if (!user) throw new Error('Not authenticated');
 
             console.log('Updating profile for user:', user.id);
+
+            // Map equipment selection to array
+            const equipmentMap: Record<string, string[]> = {
+                'full_gym': ['barbell', 'dumbbell', 'cable', 'machine'],
+                'dumbbells': ['dumbbell'],
+                'bodyweight': ['bodyweight'],
+                'bands': ['band', 'bodyweight']
+            };
 
             // 1. Update Profile
             const { error: profileError } = await supabase.from('users').update({
@@ -57,6 +69,8 @@ export function OnboardingWizard() {
                     age: parseInt(data.age),
                     weight: parseInt(data.weight),
                     experience: data.experience,
+                    equipment: data.equipment,
+                    equipment_available: equipmentMap[data.equipment] || ['barbell', 'dumbbell'],
                     days_per_week: data.daysPerWeek,
                     goal: data.goal
                 }
@@ -71,9 +85,10 @@ export function OnboardingWizard() {
 
             // 2. Generate Program
             await generateProgram(user.id, {
-                experience: data.experience as any,
+                experience: data.experience as 'beginner' | 'intermediate' | 'advanced',
                 days_per_week: data.daysPerWeek,
-                goal: data.goal as any
+                goal: data.goal as 'strength' | 'hypertrophy' | 'general',
+                equipment: equipmentMap[data.equipment] || ['barbell', 'dumbbell']
             });
 
             console.log('Program generated. Redirecting...');
@@ -141,7 +156,7 @@ export function OnboardingWizard() {
                                         key={level}
                                         onClick={() => setData({ ...data, experience: level })}
                                         className={`p-4 rounded-[var(--radius-md)] border transition-all uppercase tracking-wide font-bold text-left
-                      ${data.experience === level
+                                            ${data.experience === level
                                                 ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] shadow-[0_0_15px_-5px_var(--accent-glow)]'
                                                 : 'border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/10'
                                             }`}
@@ -153,6 +168,28 @@ export function OnboardingWizard() {
                         )}
 
                         {step === 3 && (
+                            <div className="grid grid-cols-1 gap-4">
+                                {EQUIPMENT_OPTIONS.map((option) => (
+                                    <button
+                                        key={option.id}
+                                        onClick={() => setData({ ...data, equipment: option.id })}
+                                        className={`p-4 rounded-[var(--radius-md)] border transition-all text-left flex items-center gap-4
+                                            ${data.equipment === option.id
+                                                ? 'border-[var(--accent-tertiary)] bg-[var(--accent-tertiary)]/10 text-white shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
+                                                : 'border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        <span className="text-2xl">{option.icon}</span>
+                                        <div>
+                                            <p className="font-bold uppercase tracking-wide">{option.label}</p>
+                                            <p className="text-xs text-[var(--text-tertiary)]">{option.description}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {step === 4 && (
                             <div className="space-y-6">
                                 <p className="text-white text-center text-5xl font-bold">{data.daysPerWeek} DAYS</p>
                                 <input
@@ -166,14 +203,14 @@ export function OnboardingWizard() {
                             </div>
                         )}
 
-                        {step === 4 && (
+                        {step === 5 && (
                             <div className="grid grid-cols-1 gap-4">
                                 {['strength', 'hypertrophy', 'general'].map((goal) => (
                                     <button
                                         key={goal}
                                         onClick={() => setData({ ...data, goal })}
                                         className={`p-4 rounded-[var(--radius-md)] border transition-all uppercase tracking-wide font-bold text-left
-                    ${data.goal === goal
+                                            ${data.goal === goal
                                                 ? 'border-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] shadow-[0_0_15px_-5px_rgba(129,140,248,0.5)]'
                                                 : 'border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/10'
                                             }`}

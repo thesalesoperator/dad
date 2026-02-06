@@ -17,9 +17,18 @@ interface SettingsFormProps {
             experience?: string;
             days_per_week?: number;
             goal?: string;
+            equipment?: string;
+            equipment_available?: string[];
         };
     };
 }
+
+const EQUIPMENT_OPTIONS = [
+    { id: 'full_gym', label: 'FULL GYM', description: 'Barbells, machines, cables' },
+    { id: 'dumbbells', label: 'DUMBBELLS', description: 'Home gym setup' },
+    { id: 'bodyweight', label: 'BODYWEIGHT', description: 'No equipment' },
+    { id: 'bands', label: 'BANDS', description: 'Portable training' },
+];
 
 export function SettingsForm({ profile }: SettingsFormProps) {
     const onboardingData = profile.onboarding_data || {};
@@ -30,13 +39,24 @@ export function SettingsForm({ profile }: SettingsFormProps) {
         weight: String(onboardingData.weight || ''),
         experience: onboardingData.experience || 'beginner',
         daysPerWeek: onboardingData.days_per_week || 3,
-        goal: onboardingData.goal || 'strength'
+        goal: onboardingData.goal || 'strength',
+        equipment: onboardingData.equipment || 'full_gym'
     });
     const [saving, setSaving] = useState(false);
     const [regenerating, setRegenerating] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const supabase = createClient();
+
+    const getEquipmentList = (key: string) => {
+        const map: Record<string, string[]> = {
+            'full_gym': ['barbell', 'dumbbell', 'cable', 'machine'],
+            'dumbbells': ['dumbbell'],
+            'bodyweight': ['bodyweight'],
+            'bands': ['band', 'bodyweight']
+        };
+        return map[key] || ['barbell', 'dumbbell'];
+    };
 
     const handleSaveProfile = async () => {
         setSaving(true);
@@ -49,7 +69,9 @@ export function SettingsForm({ profile }: SettingsFormProps) {
                     weight: parseInt(data.weight) || undefined,
                     experience: data.experience,
                     days_per_week: data.daysPerWeek,
-                    goal: data.goal
+                    goal: data.goal,
+                    equipment: data.equipment,
+                    equipment_available: getEquipmentList(data.equipment)
                 }
             }).eq('id', profile.id);
 
@@ -77,7 +99,8 @@ export function SettingsForm({ profile }: SettingsFormProps) {
             await generateProgram(profile.id, {
                 experience: data.experience as any,
                 days_per_week: data.daysPerWeek,
-                goal: data.goal as any
+                goal: data.goal as any,
+                equipment: getEquipmentList(data.equipment)
             });
 
             setMessage({ type: 'success', text: 'New training cycle created! Redirecting...' });
@@ -164,6 +187,27 @@ export function SettingsForm({ profile }: SettingsFormProps) {
                     </div>
                 </div>
 
+                {/* Equipment */}
+                <div className="mb-6">
+                    <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider font-bold mb-3 block">Equipment Access</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {EQUIPMENT_OPTIONS.map((opt) => (
+                            <button
+                                key={opt.id}
+                                onClick={() => setData({ ...data, equipment: opt.id })}
+                                className={`p-3 rounded-xl border transition-all text-left
+                                    ${data.equipment === opt.id
+                                        ? 'border-[var(--accent-tertiary)] bg-[var(--accent-tertiary)]/10 text-[var(--accent-tertiary)]'
+                                        : 'border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20'
+                                    }`}
+                            >
+                                <div className="font-bold text-xs uppercase tracking-wide">{opt.label}</div>
+                                <div className="text-[10px] opacity-70 truncate">{opt.description}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Days Per Week */}
                 <div className="mb-6">
                     <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider font-bold mb-3 block">Days Per Week</label>
@@ -208,8 +252,8 @@ export function SettingsForm({ profile }: SettingsFormProps) {
             {/* Message */}
             {message && (
                 <div className={`p-4 rounded-xl border ${message.type === 'success'
-                        ? 'bg-[var(--accent-tertiary)]/10 border-[var(--accent-tertiary)]/30 text-[var(--accent-tertiary)]'
-                        : 'bg-red-500/10 border-red-500/30 text-red-400'
+                    ? 'bg-[var(--accent-tertiary)]/10 border-[var(--accent-tertiary)]/30 text-[var(--accent-tertiary)]'
+                    : 'bg-red-500/10 border-red-500/30 text-red-400'
                     }`}>
                     {message.text}
                 </div>

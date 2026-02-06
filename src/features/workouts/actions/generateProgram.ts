@@ -6,79 +6,74 @@ interface UserData {
     experience: 'beginner' | 'intermediate' | 'advanced';
     days_per_week: number;
     goal: 'strength' | 'hypertrophy' | 'general';
+    equipment: string[];
 }
 
 // Exercise templates with scientific rationale
+// Using canonical names that map to the "ideal" version (usually Barbell/Gym)
 const EXERCISE_TEMPLATES = {
-    // Upper body exercises - VARIATION A
     'upper_push_a': [
-        { name: 'Barbell Bench Press', rationale: 'Primary horizontal push. Activates pectorals, anterior delts, and triceps with maximal load capacity (Schoenfeld, 2010).' },
-        { name: 'Overhead Press', rationale: 'Vertical push building shoulder strength and stability. Essential for balanced upper body development.' },
-        { name: 'Incline Dumbbell Press', rationale: 'Targets upper chest fibers at 30-45° angle, addressing common weakness in clavicular pec head.' },
-        { name: 'Dips', rationale: 'Compound movement for chest/triceps with bodyweight loading. Excellent muscle activation pattern.' },
-        { name: 'Lateral Raise', rationale: 'Isolation for medial deltoid. Creates shoulder width and V-taper aesthetics.' },
+        { name: 'Barbell Bench Press', rationale: 'Primary horizontal push. Activates pectorals, anterior delts, and triceps.' },
+        { name: 'Overhead Press', rationale: 'Vertical push building shoulder strength and stability.' },
+        { name: 'Incline Dumbbell Press', rationale: 'Targets upper chest fibers, addressing common clavicular weakness.' },
+        { name: 'Dips', rationale: 'Compound movement for chest/triceps. Excellent muscle activation.' },
+        { name: 'Lateral Raise', rationale: 'Isolation for medial deltoid. Creates shoulder width.' },
     ],
-    // Upper body exercises - VARIATION B (different movements, same patterns)
     'upper_push_b': [
-        { name: 'Incline Barbell Press', rationale: 'Emphasizes upper chest with barbell loading. Complements flat bench from Day A.' },
-        { name: 'Dumbbell Shoulder Press', rationale: 'Unilateral shoulder work addresses imbalances. Greater ROM than barbell variation.' },
-        { name: 'Dumbbell Bench Press', rationale: 'Greater pec stretch and independent arm work. Builds stability and addresses weaknesses.' },
-        { name: 'Close-Grip Bench Press', rationale: 'Tricep-focused pressing. Builds lockout strength and arm mass.' },
-        { name: 'Cable Lateral Raise', rationale: 'Constant tension through full ROM. Different resistance curve than dumbbell variation.' },
+        { name: 'Incline Barbell Press', rationale: 'Emphasizes upper chest. Complements flat pressing.' },
+        { name: 'Dumbbell Shoulder Press', rationale: 'Unilateral shoulder work addresses imbalances.' },
+        { name: 'Dumbbell Bench Press', rationale: 'Greater pec stretch and independent arm work.' },
+        { name: 'Close-Grip Bench Press', rationale: 'Tricep-focused pressing. Builds lockout strength.' },
+        { name: 'Cable Lateral Raise', rationale: 'Constant tension lateral raise for hypertrophy.' },
     ],
-    // Pull exercises - VARIATION A
     'upper_pull_a': [
-        { name: 'Barbell Row', rationale: 'Horizontal pull for lat width and thickness. High load capacity builds back mass.' },
-        { name: 'Pull-ups', rationale: 'Vertical pull developing lat width. Bodyweight mastery indicates functional strength.' },
-        { name: 'Face Pull', rationale: 'Rear delt and rotator cuff health. Essential for shoulder balance and posture.' },
-        { name: 'Hammer Curl', rationale: 'Brachialis and brachioradialis focus. Builds arm thickness and grip strength.' },
-        { name: 'Shrugs', rationale: 'Upper trap development for yoke size and deadlift support.' },
+        { name: 'Barbell Row', rationale: 'Horizontal pull for lat width and thickness.' },
+        { name: 'Pull-ups', rationale: 'Vertical pull developing lat width and functional strength.' },
+        { name: 'Face Pull', rationale: 'Rear delt and rotator cuff health. Essential for posture.' },
+        { name: 'Hammer Curl', rationale: 'Brachialis focus. Builds arm thickness.' },
+        { name: 'Shrugs', rationale: 'Upper trap development.' },
     ],
-    // Pull exercises - VARIATION B
     'upper_pull_b': [
-        { name: 'Cable Row', rationale: 'Constant tension horizontal pull. Different strength curve than barbell row.' },
-        { name: 'Lat Pulldown', rationale: 'Controlled vertical pull with adjustable resistance. Builds lat width.' },
-        { name: 'Reverse Fly', rationale: 'Rear delt isolation. Complements face pulls for shoulder health.' },
-        { name: 'Barbell Curl', rationale: 'Classic bicep builder. Supinated grip maximizes bicep activation.' },
-        { name: 'Dumbbell Row', rationale: 'Unilateral back work. Addresses imbalances and allows greater ROM.' },
+        { name: 'Cable Row', rationale: 'Constant tension horizontal pull.' },
+        { name: 'Lat Pulldown', rationale: 'Controlled vertical pull with adjustable resistance.' },
+        { name: 'Reverse Fly', rationale: 'Rear delt isolation for shoulder health.' },
+        { name: 'Barbell Curl', rationale: 'Classic bicep builder. Maximizes activation.' },
+        { name: 'Dumbbell Row', rationale: 'Unilateral back work allowing greater ROM.' },
     ],
-    // Lower body - VARIATION A
     'lower_a': [
-        { name: 'Barbell Squat', rationale: 'King of lower body exercises. Quad, glute, and core development with maximal loading.' },
-        { name: 'Romanian Deadlift', rationale: 'Hip hinge for hamstring and glute development. Essential for posterior chain.' },
-        { name: 'Walking Lunges', rationale: 'Unilateral leg work improving balance and addressing asymmetries.' },
-        { name: 'Leg Curl', rationale: 'Isolated knee flexion for hamstring development. Complements hip-dominant movements.' },
-        { name: 'Standing Calf Raise', rationale: 'Gastrocnemius focus with straight knee position. Essential for complete leg development.' },
+        { name: 'Barbell Back Squat', rationale: 'King of lower body exercises. Maximal loading.' },
+        { name: 'Romanian Deadlift', rationale: 'Hip hinge for posterior chain development.' },
+        { name: 'Walking Lunges', rationale: 'Unilateral led work improving balance.' },
+        { name: 'Leg Curl', rationale: 'Isolated hamstring development.' },
+        { name: 'Standing Calf Raise', rationale: 'Gastrocnemius focus.' },
     ],
-    // Lower body - VARIATION B
     'lower_b': [
-        { name: 'Front Squat', rationale: 'Quad-dominant with upright torso. Builds core strength and addresses back squat weaknesses.' },
-        { name: 'Conventional Deadlift', rationale: 'Full posterior chain development. Maximal total body loading capacity.' },
-        { name: 'Bulgarian Split Squat', rationale: 'Single-leg strength and stability. High muscle activation with lower spinal load.' },
-        { name: 'Leg Extension', rationale: 'Quad isolation for VMO and rectus femoris. Builds knee stability.' },
-        { name: 'Seated Calf Raise', rationale: 'Soleus focus with bent knee position. Complements standing raises.' },
+        { name: 'Front Squat', rationale: 'Quad-dominant squat variation.' },
+        { name: 'Conventional Deadlift', rationale: 'Full posterior chain development.' },
+        { name: 'Bulgarian Split Squat', rationale: 'Single-leg strength and stability.' },
+        { name: 'Leg Extension', rationale: 'Quad isolation.' },
+        { name: 'Seated Calf Raise', rationale: 'Soleus focus.' },
     ],
-    // Full body exercises
     'full_body_a': [
-        { name: 'Barbell Squat', rationale: 'Primary lower movement. Quad and glute development with full body engagement.' },
-        { name: 'Barbell Bench Press', rationale: 'Primary horizontal push for chest and triceps development.' },
-        { name: 'Barbell Row', rationale: 'Horizontal pull for back thickness and posture.' },
-        { name: 'Overhead Press', rationale: 'Vertical push for shoulder strength and stability.' },
-        { name: 'Romanian Deadlift', rationale: 'Hip hinge for posterior chain. Balances quad-dominant squats.' },
+        { name: 'Barbell Back Squat', rationale: 'Primary lower body compound movement.' },
+        { name: 'Barbell Bench Press', rationale: 'Primary upper body horizontal push.' },
+        { name: 'Barbell Row', rationale: 'Primary upper body horizontal pull.' },
+        { name: 'Overhead Press', rationale: 'Primary vertical push.' },
+        { name: 'Romanian Deadlift', rationale: 'Posterior chain accessory.' },
     ],
     'full_body_b': [
-        { name: 'Front Squat', rationale: 'Quad emphasis with core engagement. Different stimulus than back squat.' },
-        { name: 'Incline Dumbbell Press', rationale: 'Upper chest focus with unilateral loading.' },
-        { name: 'Pull-ups', rationale: 'Vertical pull for lat development and bodyweight mastery.' },
-        { name: 'Dumbbell Shoulder Press', rationale: 'Unilateral shoulder work for balance and ROM.' },
-        { name: 'Conventional Deadlift', rationale: 'Full posterior chain and grip strength development.' },
+        { name: 'Front Squat', rationale: 'Quad-focused squat variation.' },
+        { name: 'Incline Dumbbell Press', rationale: 'Upper chest focus.' },
+        { name: 'Pull-ups', rationale: 'Vertical pulling strength.' },
+        { name: 'Dumbbell Shoulder Press', rationale: 'Unilateral overhead work.' },
+        { name: 'Conventional Deadlift', rationale: 'Full body pulling power.' },
     ],
     'full_body_c': [
-        { name: 'Bulgarian Split Squat', rationale: 'Unilateral leg strength addressing imbalances.' },
-        { name: 'Dumbbell Bench Press', rationale: 'Chest development with independent arm movement.' },
-        { name: 'Cable Row', rationale: 'Constant tension back work for muscle growth.' },
-        { name: 'Lateral Raise', rationale: 'Shoulder width and aesthetics.' },
-        { name: 'Leg Curl', rationale: 'Direct hamstring work completing the session.' },
+        { name: 'Bulgarian Split Squat', rationale: 'Unilateral leg strength.' },
+        { name: 'Dumbbell Bench Press', rationale: 'Chest hypertrophy.' },
+        { name: 'Cable Row', rationale: 'Back thickness.' },
+        { name: 'Lateral Raise', rationale: 'Shoulder isolation.' },
+        { name: 'Leg Curl', rationale: 'Hamstring isolation.' },
     ],
 };
 
@@ -92,15 +87,35 @@ interface WorkoutPlanItem {
 export async function generateProgram(userId: string, userData: UserData) {
     const supabase = await createClient();
 
-    // Fetch all exercises from database
-    const { data: dbExercises } = await supabase.from('exercises').select('*');
-    if (!dbExercises) throw new Error('No exercises found');
+    // 1. Fetch all exercises
+    const { data: allExercises } = await supabase.from('exercises').select('*');
+    if (!allExercises || allExercises.length === 0) throw new Error('No exercises found in database');
 
-    // Determine split based on training frequency
+    // 2. Filter exercises by user equipment
+    // An exercise is valid if it lists ANY equipment the user has (OR logic within exercise, AND logic between exercise and user)
+    // Actually, usually an exercise needs specific equipment. 
+    // If exercise needs 'barbell', user MUST have 'barbell'.
+    // If exercise needs 'barbell' OR 'dumbbell' (rare), match either.
+    // Our seed data uses arrays for "Options". e.g. Floor Press: ['barbell', 'dumbbell'].
+    // So if user has EITHER, it's valid.
+
+    // Ensure "bodyweight" is always available
+    const userEquipment = new Set([...userData.equipment, 'bodyweight']);
+
+    const availableExercises = allExercises.filter(ex => {
+        // If exercise has no equipment listed, assume it needs something we don't know? Or bodyweight?
+        // Our seed has equipment_type. 
+        if (!ex.equipment_type || ex.equipment_type.length === 0) return true; // Fail safe
+
+        // Exercise is valid if there is an intersection between exercise options and user equipment
+        return ex.equipment_type.some((req: string) => userEquipment.has(req));
+    });
+
+    if (availableExercises.length === 0) throw new Error('No exercises match your equipment profile');
+
+    // 3. Determine split
     let workoutPlan: WorkoutPlanItem[] = [];
-
     if (userData.days_per_week <= 3) {
-        // Full Body Split - 3 unique days
         const fullBodyPlan: WorkoutPlanItem[] = [
             { name: 'Full Body A', template: 'full_body_a' },
             { name: 'Full Body B', template: 'full_body_b' },
@@ -108,7 +123,6 @@ export async function generateProgram(userId: string, userData: UserData) {
         ];
         workoutPlan = fullBodyPlan.slice(0, userData.days_per_week);
     } else if (userData.days_per_week === 4) {
-        // Upper/Lower Split - A/B variations
         workoutPlan = [
             { name: 'Upper A', template: 'upper_push_a' },
             { name: 'Lower A', template: 'lower_a' },
@@ -116,8 +130,7 @@ export async function generateProgram(userId: string, userData: UserData) {
             { name: 'Lower B', template: 'lower_b' },
         ];
     } else {
-        // Push/Pull/Legs - 5-6 days
-        const pplPlan: WorkoutPlanItem[] = [
+        workoutPlan = [
             { name: 'Push A', template: 'upper_push_a' },
             { name: 'Pull A', template: 'upper_pull_a' },
             { name: 'Legs A', template: 'lower_a' },
@@ -125,45 +138,82 @@ export async function generateProgram(userId: string, userData: UserData) {
             { name: 'Pull B', template: 'upper_pull_b' },
             { name: 'Legs B', template: 'lower_b' },
         ];
-        workoutPlan = pplPlan.slice(0, userData.days_per_week);
+        if (userData.days_per_week < 6) workoutPlan = workoutPlan.slice(0, userData.days_per_week);
     }
 
-    // Get rep/set scheme based on goal
     const scheme = getRepScheme(userData.goal);
 
-    // Create each workout
+    // 4. Create Workouts
     for (const workout of workoutPlan) {
         const { data: createdWorkout, error: wError } = await supabase.from('workouts').insert({
             user_id: userId,
             name: workout.name,
-            description: `Target: ${userData.goal} | Level: ${userData.experience}`
+            description: `Target: ${userData.goal} | Level: ${userData.experience} | Equipment: ${userData.equipment.length > 3 ? 'Full' : 'Limited'}`
         }).select().single();
 
         if (wError) throw wError;
 
-        // Get template exercises
         const templateExercises = EXERCISE_TEMPLATES[workout.template];
+        const workoutExercises = [];
 
-        // Match template exercises to database exercises
-        const workoutExercises = templateExercises.map((templateEx, index) => {
-            const dbEx = dbExercises.find(e =>
-                e.name.toLowerCase().includes(templateEx.name.toLowerCase().split(' ')[0]) ||
-                templateEx.name.toLowerCase().includes(e.name.toLowerCase())
-            ) || dbExercises[index % dbExercises.length]; // Fallback to any exercise
+        for (let i = 0; i < templateExercises.length; i++) {
+            const templateEx = templateExercises[i];
 
-            return {
+            // Find best matching exercise
+            const selectedEx = findBestMatch(templateEx.name, allExercises, availableExercises);
+
+            // Calculate individualized RPE/Reps based on difficulty? 
+            // For now, stick to scheme.
+
+            workoutExercises.push({
                 workout_id: createdWorkout.id,
-                exercise_id: dbEx.id,
+                exercise_id: selectedEx.id,
                 sets: scheme.sets,
                 reps: scheme.reps,
                 rest_seconds: scheme.rest,
-                order: index,
-                rationale: templateEx.rationale
-            };
-        });
+                order: i,
+                rationale: templateEx.rationale + (selectedEx.name !== templateEx.name ? ` (Substituted with ${selectedEx.name} based on equipment)` : '')
+            });
+        }
 
         await supabase.from('workout_exercises').insert(workoutExercises);
     }
+}
+
+function findBestMatch(targetName: string, allExercises: any[], availableExercises: any[]) {
+    // 1. Try exact match in available
+    const exact = availableExercises.find(e => e.name.toLowerCase() === targetName.toLowerCase());
+    if (exact) return exact;
+
+    // 2. Find canonical exercise info (to get muscle group)
+    const canonical = allExercises.find(e => e.name.toLowerCase() === targetName.toLowerCase());
+
+    // 3. If canonical found, search for same muscle group in available
+    if (canonical && canonical.muscle_group) {
+        const muscleMatch = availableExercises.filter(e => e.muscle_group === canonical.muscle_group);
+
+        if (muscleMatch.length > 0) {
+            // Prefer compound movements? Or name similarity?
+            // Simple keyword matching for better substitution (e.g. "Dumbbell Bench" for "Barbell Bench")
+            const keywords = targetName.toLowerCase().split(' ').filter(w => !['barbell', 'dumbbell', 'cable', 'machine', 'band'].includes(w));
+
+            const nameMatch = muscleMatch.find(e =>
+                keywords.some(k => e.name.toLowerCase().includes(k))
+            );
+
+            if (nameMatch) return nameMatch;
+
+            // Return first muscle match
+            return muscleMatch[0];
+        }
+    }
+
+    // 4. Fallback: Find ANY match by name similarity in available
+    const fallbackMatch = availableExercises.find(e =>
+        e.name.toLowerCase().includes(targetName.toLowerCase().split(' ')[0])
+    );
+
+    return fallbackMatch || availableExercises[0];
 }
 
 function getRepScheme(goal: string) {
