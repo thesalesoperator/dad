@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { VoiceInput } from '@/components/ui/VoiceInput';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -107,33 +108,26 @@ export function WorkoutRecorder({ workout, exercises }: WorkoutRecorderProps) {
                         <div className="space-y-2 sm:space-y-3">
                             {Array.from({ length: item.sets }).map((_, setIndex) => {
                                 const setNum = setIndex + 1;
+                                const currentLog = logs[item.id]?.[setNum];
                                 return (
                                     <div key={setNum} className="grid grid-cols-[auto,1fr,1fr] gap-2 sm:gap-3 items-center">
                                         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] sm:text-xs font-bold text-[var(--text-secondary)]">
                                             {setNum}
                                         </div>
 
-                                        <div className="bg-white/5 rounded-[var(--radius-sm)] px-2 sm:px-3 py-2 sm:py-3 border border-white/10 focus-within:border-[var(--accent-primary)] transition-colors flex items-center">
-                                            <span className="text-[8px] sm:text-[10px] text-[var(--text-secondary)] uppercase font-semibold mr-1 sm:mr-2 w-6 sm:w-8">LBS</span>
-                                            <input
-                                                type="number"
-                                                inputMode="numeric"
-                                                placeholder="-"
-                                                className="w-full bg-transparent text-right text-base sm:text-lg text-white font-medium outline-none placeholder:text-white/20"
-                                                onChange={(e) => handleLogChange(item.id, setNum, 'weight', e.target.value)}
-                                            />
-                                        </div>
+                                        <VoiceInput
+                                            label="LBS"
+                                            value={currentLog?.weight || ''}
+                                            onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
+                                            placeholder="-"
+                                        />
 
-                                        <div className="bg-white/5 rounded-[var(--radius-sm)] px-2 sm:px-3 py-2 sm:py-3 border border-white/10 focus-within:border-[var(--accent-primary)] transition-colors flex items-center">
-                                            <span className="text-[8px] sm:text-[10px] text-[var(--text-secondary)] uppercase font-semibold mr-1 sm:mr-2 w-6 sm:w-8">REPS</span>
-                                            <input
-                                                type="number"
-                                                inputMode="numeric"
-                                                placeholder={item.reps}
-                                                className="w-full bg-transparent text-right text-base sm:text-lg text-white font-medium outline-none placeholder:text-white/20"
-                                                onChange={(e) => handleLogChange(item.id, setNum, 'reps', e.target.value)}
-                                            />
-                                        </div>
+                                        <VoiceInput
+                                            label="REPS"
+                                            value={currentLog?.reps || ''}
+                                            onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
+                                            placeholder={item.reps}
+                                        />
                                     </div>
                                 );
                             })}
@@ -156,3 +150,4 @@ export function WorkoutRecorder({ workout, exercises }: WorkoutRecorderProps) {
         </div>
     );
 }
+
