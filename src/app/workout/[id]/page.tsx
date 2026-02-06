@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { CompleteSessionButton } from '@/features/workouts/components/CompleteSessionButton';
 
 export default async function WorkoutPage({ params }: { params: { id: string } }) {
     const supabase = await createClient();
@@ -83,9 +84,7 @@ export default async function WorkoutPage({ params }: { params: { id: string } }
             </div>
 
             <div className="fixed bottom-6 left-6 right-6 z-20">
-                <Button fullWidth size="lg" className="shadow-[0_0_40px_-10px_var(--accent-glow)]">
-                    COMPLETE SESSION
-                </Button>
+                <CompleteSessionButton workoutId={id} />
             </div>
         </div>
     );

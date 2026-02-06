@@ -47,8 +47,10 @@ export function OnboardingWizard() {
             const user = (await supabase.auth.getUser()).data.user;
             if (!user) throw new Error('Not authenticated');
 
+            console.log('Updating profile for user:', user.id);
+
             // 1. Update Profile
-            const { error } = await supabase.from('users').update({
+            const { error: profileError } = await supabase.from('users').update({
                 full_name: data.fullName,
                 onboarding_completed: true,
                 onboarding_data: {
@@ -60,7 +62,12 @@ export function OnboardingWizard() {
                 }
             }).eq('id', user.id);
 
-            if (error) throw error;
+            if (profileError) {
+                console.error('Profile update error:', profileError);
+                throw new Error(`Profile Update Failed: ${profileError.message}`);
+            }
+
+            console.log('Profile updated. Generating program...');
 
             // 2. Generate Program
             await generateProgram(user.id, {
@@ -69,10 +76,11 @@ export function OnboardingWizard() {
                 goal: data.goal as any
             });
 
+            console.log('Program generated. Redirecting...');
             window.location.href = '/dashboard';
-        } catch (error) {
-            console.error(error);
-            alert('Failed to save profile');
+        } catch (error: any) {
+            console.error('Onboarding error:', error);
+            alert(`Error: ${error.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }
