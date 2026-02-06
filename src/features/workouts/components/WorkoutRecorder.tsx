@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { VoiceInput } from '@/components/ui/VoiceInput';
 import { VoiceNoteInput } from '@/components/ui/VoiceNoteInput';
 import { ExerciseSwap } from '@/components/ui/ExerciseSwap';
 import { ExerciseInfo } from '@/components/ui/ExerciseInfo';
+import { RestTimer } from '@/components/ui/RestTimer';
+import { RPESelector } from '@/components/ui/RPESelector';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -28,8 +30,13 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
     const router = useRouter();
     const supabase = createClient();
 
-    const [logs, setLogs] = useState<Record<string, Record<number, { weight: string, reps: string }>>>({});
+    const [logs, setLogs] = useState<Record<string, Record<number, { weight: string, reps: string, rpe?: number }>>>({});
     const [notes, setNotes] = useState<Record<string, string>>({});
+    const [showTimer, setShowTimer] = useState(false);
+    const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+
+    // Determine goal from workout data (default to hypertrophy)
+    const goal = (workout?.goal || 'hypertrophy') as 'strength' | 'hypertrophy' | 'general';
 
     const handleNoteChange = (exerciseId: string, note: string) => {
         setNotes(prev => ({ ...prev, [exerciseId]: note }));
@@ -116,17 +123,40 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
     };
 
     const handleLogChange = (exerciseId: string, setNumber: number, field: 'weight' | 'reps', value: string) => {
+        setLogs(prev => {
+            const newLogs = {
+                ...prev,
+                [exerciseId]: {
+                    ...prev[exerciseId],
+                    [setNumber]: {
+                        ...prev[exerciseId]?.[setNumber],
+                        [field]: value
+                    }
+                }
+            };
+
+            // Auto-show timer when a set is complete (both weight and reps filled)
+            const currentSet = newLogs[exerciseId]?.[setNumber];
+            if (currentSet?.weight && currentSet?.reps) {
+                setShowTimer(true);
+            }
+
+            return newLogs;
+        });
+    };
+
+    const handleRPEChange = useCallback((exerciseId: string, setNumber: number, rpe: number) => {
         setLogs(prev => ({
             ...prev,
             [exerciseId]: {
                 ...prev[exerciseId],
                 [setNumber]: {
                     ...prev[exerciseId]?.[setNumber],
-                    [field]: value
+                    rpe
                 }
             }
         }));
-    };
+    }, []);
 
     const handleComplete = async () => {
         setLoading(true);
@@ -245,43 +275,68 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                                     const currentLog = logs[item.id]?.[setNum];
                                     const isComplete = currentLog?.weight && currentLog?.reps;
                                     return (
-                                        <div
-                                            key={setNum}
-                                            className={`grid grid-cols-[auto,1fr,1fr] gap-3 sm:gap-4 items-center p-2 sm:p-3 rounded-xl transition-all ${isComplete
-                                                ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
-                                                : 'bg-white/[0.02] border border-transparent'
-                                                }`}
-                                        >
-                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold font-mono transition-all ${isComplete
-                                                ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
-                                                : 'bg-white/5 text-[var(--text-tertiary)]'
-                                                }`}>
-                                                {isComplete ? (
-                                                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                    </svg>
-                                                ) : setNum}
+                                        <div key={setNum} className="space-y-2">
+                                            <div
+                                                className={`grid grid-cols-[auto,1fr,1fr] gap-3 sm:gap-4 items-center p-2 sm:p-3 rounded-xl transition-all ${isComplete
+                                                    ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
+                                                    : 'bg-white/[0.02] border border-transparent'
+                                                    }`}
+                                            >
+                                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold font-mono transition-all ${isComplete
+                                                    ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
+                                                    : 'bg-white/5 text-[var(--text-tertiary)]'
+                                                    }`}>
+                                                    {isComplete ? (
+                                                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                        </svg>
+                                                    ) : setNum}
+                                                </div>
+
+                                                <VoiceInput
+                                                    label="LBS"
+                                                    value={currentLog?.weight || ''}
+                                                    onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
+                                                    placeholder="—"
+                                                />
+
+                                                <VoiceInput
+                                                    label="REPS"
+                                                    value={currentLog?.reps || ''}
+                                                    onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
+                                                    placeholder={item.reps}
+                                                />
                                             </div>
 
-                                            <VoiceInput
-                                                label="LBS"
-                                                value={currentLog?.weight || ''}
-                                                onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
-                                                placeholder="—"
-                                            />
-
-                                            <VoiceInput
-                                                label="REPS"
-                                                value={currentLog?.reps || ''}
-                                                onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
-                                                placeholder={item.reps}
-                                            />
+                                            {/* RPE Selector - shows after set is complete */}
+                                            {isComplete && (
+                                                <div className="pl-11 sm:pl-14 pr-2 animate-slide-up">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[var(--text-tertiary)] text-[10px] uppercase tracking-wider">RPE:</span>
+                                                        <RPESelector
+                                                            value={currentLog?.rpe}
+                                                            onChange={(rpe) => handleRPEChange(item.id, setNum, rpe)}
+                                                            compact
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
                         </div>
                     </Card>
+
+                    {/* Rest Timer - shows between exercises */}
+                    {showTimer && index < exercises.length - 1 && (
+                        <div className="mt-4 animate-slide-up">
+                            <RestTimer
+                                goal={goal}
+                                onComplete={() => setShowTimer(false)}
+                            />
+                        </div>
+                    )}
                 </div>
             ))}
 
