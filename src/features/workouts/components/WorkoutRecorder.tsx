@@ -187,76 +187,127 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
     };
 
     return (
-        <div className="space-y-4 sm:space-y-6 relative z-10 pb-28 sm:pb-24">
+        <div className="space-y-5 sm:space-y-8 relative z-10 pb-32 sm:pb-28">
             {exercises.map((item: any, index: number) => (
-                <Card key={item.id} className="relative group">
-                    <div className="absolute top-2 right-2 sm:top-0 sm:right-0 sm:p-4 opacity-10 text-5xl sm:text-8xl font-bold text-white pointer-events-none select-none">
-                        {index + 1}
-                    </div>
-
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-1">
-                            <h3 className="text-lg sm:text-xl font-semibold text-white">{item.exercise.name}</h3>
-                            <ExerciseSwap
-                                currentExercise={item.exercise}
-                                alternatives={alternatives[item.exercise.id] || []}
-                                onSwap={(newId) => handleSwap(item.id, item.exercise.id, newId)}
-                            />
-                        </div>
-                        <p className="text-[var(--text-secondary)] text-[10px] sm:text-xs font-medium uppercase mb-2 tracking-wide">
-                            Target: {item.sets} Sets × {item.reps} Reps
-                        </p>
-
-                        {/* Notes Input */}
-                        <div className="mb-4 sm:mb-6">
-                            <VoiceNoteInput
-                                value={notes[item.id] || ''}
-                                onChange={(val) => handleNoteChange(item.id, val)}
-                                placeholder="Add notes... (e.g., safety bar, tempo 3-1-2)"
-                            />
+                <div
+                    key={item.id}
+                    className="animate-slide-up"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                    <Card variant="glass" className="relative group">
+                        {/* Exercise Number Watermark */}
+                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-white/[0.03] flex items-center justify-center">
+                            <span className="text-2xl sm:text-3xl font-bold text-white/10 font-mono">{index + 1}</span>
                         </div>
 
-                        <div className="space-y-2 sm:space-y-3">
-                            {Array.from({ length: item.sets }).map((_, setIndex) => {
-                                const setNum = setIndex + 1;
-                                const currentLog = logs[item.id]?.[setNum];
-                                return (
-                                    <div key={setNum} className="grid grid-cols-[auto,1fr,1fr] gap-2 sm:gap-3 items-center">
-                                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] sm:text-xs font-bold text-[var(--text-secondary)]">
-                                            {setNum}
-                                        </div>
-
-                                        <VoiceInput
-                                            label="LBS"
-                                            value={currentLog?.weight || ''}
-                                            onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
-                                            placeholder="-"
-                                        />
-
-                                        <VoiceInput
-                                            label="REPS"
-                                            value={currentLog?.reps || ''}
-                                            onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
-                                            placeholder={item.reps}
-                                        />
+                        <div className="relative z-10">
+                            {/* Exercise Header */}
+                            <div className="flex justify-between items-start mb-2 pr-12 sm:pr-16">
+                                <div>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{item.exercise.name}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="px-2 py-0.5 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-full text-[var(--accent-primary)] text-[10px] sm:text-xs font-mono font-medium tracking-wide">
+                                            {item.sets} × {item.reps}
+                                        </span>
+                                        <span className="text-[var(--text-tertiary)] text-[10px] sm:text-xs uppercase tracking-wider">
+                                            {item.exercise.muscle_group}
+                                        </span>
                                     </div>
-                                );
-                            })}
+                                </div>
+                                <ExerciseSwap
+                                    currentExercise={item.exercise}
+                                    alternatives={alternatives[item.exercise.id] || []}
+                                    onSwap={(newId) => handleSwap(item.id, item.exercise.id, newId)}
+                                />
+                            </div>
+
+                            {/* Notes Input */}
+                            <div className="mb-5 sm:mb-6">
+                                <VoiceNoteInput
+                                    value={notes[item.id] || ''}
+                                    onChange={(val) => handleNoteChange(item.id, val)}
+                                    placeholder="Notes: equipment, tempo, form cues..."
+                                />
+                            </div>
+
+                            {/* Sets Grid */}
+                            <div className="space-y-3 sm:space-y-4">
+                                {Array.from({ length: item.sets }).map((_, setIndex) => {
+                                    const setNum = setIndex + 1;
+                                    const currentLog = logs[item.id]?.[setNum];
+                                    const isComplete = currentLog?.weight && currentLog?.reps;
+                                    return (
+                                        <div
+                                            key={setNum}
+                                            className={`grid grid-cols-[auto,1fr,1fr] gap-3 sm:gap-4 items-center p-2 sm:p-3 rounded-xl transition-all ${isComplete
+                                                    ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
+                                                    : 'bg-white/[0.02] border border-transparent'
+                                                }`}
+                                        >
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold font-mono transition-all ${isComplete
+                                                    ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
+                                                    : 'bg-white/5 text-[var(--text-tertiary)]'
+                                                }`}>
+                                                {isComplete ? (
+                                                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                    </svg>
+                                                ) : setNum}
+                                            </div>
+
+                                            <VoiceInput
+                                                label="LBS"
+                                                value={currentLog?.weight || ''}
+                                                onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
+                                                placeholder="—"
+                                            />
+
+                                            <VoiceInput
+                                                label="REPS"
+                                                value={currentLog?.reps || ''}
+                                                onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
+                                                placeholder={item.reps}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                </Card>
+                    </Card>
+                </div>
             ))}
 
-            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[var(--bg-darker)] via-[var(--bg-darker)] to-transparent z-20">
-                <Button
-                    fullWidth
-                    size="lg"
-                    className="shadow-[0_0_40px_-10px_var(--accent-glow)] text-sm sm:text-base py-4"
-                    onClick={handleComplete}
-                    disabled={loading}
-                >
-                    {loading ? 'SAVING...' : 'COMPLETE SESSION'}
-                </Button>
+            {/* Complete Session Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 z-20">
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-darker)] via-[var(--bg-darker)]/95 to-transparent pointer-events-none" />
+                <div className="relative max-w-lg mx-auto">
+                    <Button
+                        fullWidth
+                        size="lg"
+                        className="group"
+                        onClick={handleComplete}
+                        disabled={loading}
+                    >
+                        <span className="flex items-center justify-center gap-3">
+                            {loading ? (
+                                <>
+                                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                    </svg>
+                                    SAVING...
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    COMPLETE SESSION
+                                </>
+                            )}
+                        </span>
+                    </Button>
+                </div>
             </div>
         </div>
     );

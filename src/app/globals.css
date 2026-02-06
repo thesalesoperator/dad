@@ -1,35 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Modern SaaS Palette */
-  --bg-dark: #0f172a;
-  /* Slate 900 */
-  --bg-darker: #020617;
-  /* Slate 950 */
+  /* Neon Noir Palette */
+  --bg-dark: #0a0a0f;
+  --bg-darker: #050508;
+  --bg-card: rgba(15, 15, 25, 0.8);
 
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-surface: rgba(255, 255, 255, 0.03);
-  --glass-highlight: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-surface: rgba(255, 255, 255, 0.02);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
 
-  --accent-primary: #38bdf8;
-  /* Sky 400 */
-  --accent-secondary: #818cf8;
-  /* Indigo 400 */
-  --accent-glow: rgba(56, 189, 248, 0.5);
+  /* Electric Neon Accents */
+  --accent-primary: #00f0ff;
+  --accent-secondary: #bf5af2;
+  --accent-tertiary: #30d158;
+  --accent-warning: #ff9f0a;
+  --accent-glow: rgba(0, 240, 255, 0.4);
+  --accent-glow-secondary: rgba(191, 90, 242, 0.4);
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-tertiary: rgba(255, 255, 255, 0.3);
 
   /* Layout */
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
 
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {
@@ -38,8 +41,12 @@
   margin: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: var(--bg-darker);
+  background: var(--bg-darker);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -48,33 +55,50 @@ body {
   overflow-x: hidden;
 }
 
-/* Background Gradients/Orbs */
+/* Animated Gradient Background */
 body::before {
   content: '';
   position: fixed;
-  top: -20%;
-  left: -10%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-  filter: blur(80px);
-  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(0, 240, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 110%, rgba(191, 90, 242, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(48, 209, 88, 0.05) 0%, transparent 50%);
+  z-index: -2;
   pointer-events: none;
+  animation: bgPulse 8s ease-in-out infinite alternate;
 }
 
+@keyframes bgPulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Noise Texture Overlay */
 body::after {
   content: '';
   position: fixed;
-  bottom: -10%;
-  right: -10%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-  filter: blur(80px);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.015;
   z-index: -1;
   pointer-events: none;
 }
 
+/* Typography */
 h1,
 h2,
 h3,
@@ -82,22 +106,271 @@ h4,
 h5,
 h6 {
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
 }
 
-button {
-  cursor: pointer;
-  border: none;
-  font-family: var(--font-sans);
+/* Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-/* Utility for Glass inputs autofill fix */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 240, 255, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 30px var(--accent-glow), 0 0 60px rgba(0, 240, 255, 0.2);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes borderGlow {
+
+  0%,
+  100% {
+    border-color: rgba(0, 240, 255, 0.3);
+  }
+
+  50% {
+    border-color: rgba(191, 90, 242, 0.3);
+  }
+}
+
+/* Utility Classes */
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* Glass Card */
+.glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/* Neon Button */
+.neon-button {
+  position: relative;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.neon-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.neon-button:hover::before {
+  left: 100%;
+}
+
+.neon-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px var(--accent-glow), 0 0 60px -20px var(--accent-glow-secondary);
+}
+
+.neon-button:active {
+  transform: translateY(0);
+}
+
+/* Stat Card */
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: var(--accent-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -20px rgba(0, 240, 255, 0.3);
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::after {
+  opacity: 1;
+}
+
+/* Input Styles */
+input[type="text"],
+input[type="number"] {
+  transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  box-shadow: 0 0 0 2px var(--accent-primary), 0 0 20px -5px var(--accent-glow);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-highlight);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-primary);
+  color: var(--bg-darker);
+}
+
+/* Autofill Fix */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+  -webkit-box-shadow: 0 0 0 30px var(--bg-dark) inset !important;
   -webkit-text-fill-color: white !important;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Number Input - remove spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Stagger Animation */
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+
+.stagger-6 {
+  animation-delay: 0.3s;
 }
