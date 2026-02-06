@@ -63,7 +63,7 @@ export default async function DashboardPage() {
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
                         Welcome Back,
                     </h1>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight gradient-text-shimmer">
                         {profile.full_name?.split(' ')[0] || 'Athlete'}
                     </h1>
                     <p className="text-[var(--text-secondary)] text-xs sm:text-sm font-mono mt-2">{dateString}</p>

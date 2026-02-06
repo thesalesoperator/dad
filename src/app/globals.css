@@ -188,6 +188,16 @@ h6 {
   animation: shimmer 2s infinite;
 }
 
+/* Gradient text with shimmer animation */
+.gradient-text-shimmer {
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
