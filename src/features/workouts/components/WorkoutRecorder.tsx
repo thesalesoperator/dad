@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { VoiceInput } from '@/components/ui/VoiceInput';
 import { VoiceNoteInput } from '@/components/ui/VoiceNoteInput';
 import { ExerciseSwap } from '@/components/ui/ExerciseSwap';
+import { ExerciseInfo } from '@/components/ui/ExerciseInfo';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -203,16 +204,23 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                         <div className="relative z-10">
                             {/* Exercise Header */}
                             <div className="flex justify-between items-start mb-2 pr-12 sm:pr-16">
-                                <div>
-                                    <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{item.exercise.name}</h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="px-2 py-0.5 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-full text-[var(--accent-primary)] text-[10px] sm:text-xs font-mono font-medium tracking-wide">
-                                            {item.sets} × {item.reps}
-                                        </span>
-                                        <span className="text-[var(--text-tertiary)] text-[10px] sm:text-xs uppercase tracking-wider">
-                                            {item.exercise.muscle_group}
-                                        </span>
+                                <div className="flex items-start gap-2">
+                                    <div>
+                                        <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{item.exercise.name}</h3>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="px-2 py-0.5 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-full text-[var(--accent-primary)] text-[10px] sm:text-xs font-mono font-medium tracking-wide">
+                                                {item.sets} × {item.reps}
+                                            </span>
+                                            <span className="text-[var(--text-tertiary)] text-[10px] sm:text-xs uppercase tracking-wider">
+                                                {item.exercise.muscle_group}
+                                            </span>
+                                        </div>
                                     </div>
+                                    <ExerciseInfo
+                                        name={item.exercise.name}
+                                        muscleGroup={item.exercise.muscle_group}
+                                        rationale={item.rationale}
+                                    />
                                 </div>
                                 <ExerciseSwap
                                     currentExercise={item.exercise}
@@ -240,13 +248,13 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                                         <div
                                             key={setNum}
                                             className={`grid grid-cols-[auto,1fr,1fr] gap-3 sm:gap-4 items-center p-2 sm:p-3 rounded-xl transition-all ${isComplete
-                                                    ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
-                                                    : 'bg-white/[0.02] border border-transparent'
+                                                ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
+                                                : 'bg-white/[0.02] border border-transparent'
                                                 }`}
                                         >
                                             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold font-mono transition-all ${isComplete
-                                                    ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
-                                                    : 'bg-white/5 text-[var(--text-tertiary)]'
+                                                ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
+                                                : 'bg-white/5 text-[var(--text-tertiary)]'
                                                 }`}>
                                                 {isComplete ? (
                                                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
