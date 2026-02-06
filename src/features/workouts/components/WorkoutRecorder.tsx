@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { VoiceInput } from '@/components/ui/VoiceInput';
+import { VoiceNoteInput } from '@/components/ui/VoiceNoteInput';
 import { ExerciseSwap } from '@/components/ui/ExerciseSwap';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -208,11 +209,10 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
 
                         {/* Notes Input */}
                         <div className="mb-4 sm:mb-6">
-                            <input
-                                type="text"
+                            <VoiceNoteInput
+                                value={notes[item.id] || ''}
+                                onChange={(val) => handleNoteChange(item.id, val)}
                                 placeholder="Add notes... (e.g., safety bar, tempo 3-1-2)"
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
-                                onChange={(e) => handleNoteChange(item.id, e.target.value)}
                             />
                         </div>
 
