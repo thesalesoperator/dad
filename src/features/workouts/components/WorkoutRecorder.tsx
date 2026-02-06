@@ -27,6 +27,11 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
     const supabase = createClient();
 
     const [logs, setLogs] = useState<Record<string, Record<number, { weight: string, reps: string }>>>({});
+    const [notes, setNotes] = useState<Record<string, string>>({});
+
+    const handleNoteChange = (exerciseId: string, note: string) => {
+        setNotes(prev => ({ ...prev, [exerciseId]: note }));
+    };
 
     // Fetch alternatives for all exercises
     useEffect(() => {
@@ -197,9 +202,19 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                                 onSwap={(newId) => handleSwap(item.id, item.exercise.id, newId)}
                             />
                         </div>
-                        <p className="text-[var(--text-secondary)] text-[10px] sm:text-xs font-medium uppercase mb-4 sm:mb-6 tracking-wide">
+                        <p className="text-[var(--text-secondary)] text-[10px] sm:text-xs font-medium uppercase mb-2 tracking-wide">
                             Target: {item.sets} Sets × {item.reps} Reps
                         </p>
+
+                        {/* Notes Input */}
+                        <div className="mb-4 sm:mb-6">
+                            <input
+                                type="text"
+                                placeholder="Add notes... (e.g., safety bar, tempo 3-1-2)"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+                                onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                            />
+                        </div>
 
                         <div className="space-y-2 sm:space-y-3">
                             {Array.from({ length: item.sets }).map((_, setIndex) => {
