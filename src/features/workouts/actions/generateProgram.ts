@@ -98,7 +98,12 @@ export async function generateProgram(userId: string, userData: UserData) {
         const workoutIds = existingWorkouts.map(w => w.id);
         // Delete workout_exercises for old workouts
         await supabase.from('workout_exercises').delete().in('workout_id', workoutIds);
-        // Delete old workouts (workout_logs are preserved as historical records)
+        // Clear foreign key references that block workout deletion
+        // Nullify workout_id in logs (preserves exercise history)
+        await supabase.from('logs').update({ workout_id: null }).in('workout_id', workoutIds);
+        // Delete workout_logs (session-level records tied to old plan)
+        await supabase.from('workout_logs').delete().in('workout_id', workoutIds);
+        // Now safe to delete old workouts
         await supabase.from('workouts').delete().eq('user_id', userId);
     }
 
