@@ -18,8 +18,22 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: true });
 
     const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
-
     if (!profile?.onboarding_completed) redirect('/onboarding');
+
+    // Fetch Workout Logs (History)
+    const { data: logs } = await supabase
+        .from('workout_logs')
+        .select(`
+            *,
+            workout:workouts (name)
+        `)
+        .eq('user_id', user.id)
+        .order('completed_at', { ascending: false })
+        .limit(5);
+
+    // Calculate Stats
+    const totalSessions = logs?.length || 0;
+    const lastSession = logs?.[0] ? new Date(logs[0].completed_at).toLocaleDateString() : 'N/A';
 
     return (
         <div className="min-h-screen p-6 pb-24 relative">
@@ -36,9 +50,21 @@ export default async function DashboardPage() {
                 <div className="h-10 w-10 bg-[var(--accent-primary)] rounded-full animate-pulse shadow-[0_0_20px_var(--accent-glow)]" />
             </header>
 
+            {/* Stats Overview */}
+            <section className="grid grid-cols-2 gap-4 mb-8 relative z-10">
+                <Card className="bg-white/5 border-white/10">
+                    <p className="text-[var(--text-secondary)] text-[10px] uppercase font-bold tracking-wider">Total Sessions</p>
+                    <p className="text-2xl font-bold text-white mt-1">{totalSessions}</p>
+                </Card>
+                <Card className="bg-white/5 border-white/10">
+                    <p className="text-[var(--text-secondary)] text-[10px] uppercase font-bold tracking-wider">Last Active</p>
+                    <p className="text-2xl font-bold text-white mt-1">{lastSession}</p>
+                </Card>
+            </section>
+
             <section className="mb-8 relative z-10">
                 <h2 className="text-[var(--accent-primary)] font-semibold tracking-wider text-xs uppercase mb-4">
-                    Active Protocol
+                    Active Protocol (Select to Start)
                 </h2>
 
                 <div className="grid gap-4">
@@ -69,11 +95,29 @@ export default async function DashboardPage() {
 
             <section className="relative z-10">
                 <h2 className="text-[var(--text-secondary)] font-semibold tracking-wider text-xs uppercase mb-4">
-                    Recent Activity
+                    Mission History
                 </h2>
-                <Card className="opacity-70 bg-transparent border-dashed border-white/10">
-                    <p className="text-center text-sm font-medium text-[var(--text-secondary)]">SYSTEM INITIALIZED. NO LOGS FOUND.</p>
-                </Card>
+                {logs && logs.length > 0 ? (
+                    <div className="space-y-4">
+                        {logs.map((log) => (
+                            <Card key={log.id} className="bg-transparent border-white/10 opacity-80 hover:opacity-100 transition-opacity">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="text-white font-medium">{log.workout?.name || 'Unknown Protocol'}</p>
+                                        <p className="text-[var(--text-secondary)] text-xs">
+                                            {new Date(log.completed_at).toLocaleDateString()} at {new Date(log.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                    <span className="text-[var(--accent-secondary)] text-xs font-bold uppercase">COMPLETED</span>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <Card className="opacity-70 bg-transparent border-dashed border-white/10">
+                        <p className="text-center text-sm font-medium text-[var(--text-secondary)]">SYSTEM INITIALIZED. NO LOGS FOUND.</p>
+                    </Card>
+                )}
             </section>
         </div>
     );
