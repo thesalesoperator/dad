@@ -1,26 +1,39 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
     size?: 'sm' | 'md' | 'lg';
     fullWidth?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className = '', variant = 'primary', size = 'md', fullWidth = false, ...props }, ref) => {
-        const baseStyles = 'inline-flex items-center justify-center transition-all duration-300 font-bold tracking-wider uppercase disabled:opacity-50 disabled:cursor-not-allowed';
+        const baseStyles = 'inline-flex items-center justify-center transition-all duration-200 font-medium tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
 
         const variants = {
-            primary: 'bg-[var(--color-primary)] text-white hover:bg-[#E5352B] shadow-[var(--shadow-glow)]',
-            secondary: 'bg-[var(--color-surface)] text-white hover:bg-[#2C2C2E] border border-[var(--color-text-muted)]',
-            outline: 'bg-transparent border-2 border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white',
-            danger: 'bg-red-600 text-white hover:bg-red-700',
+            primary: `
+        bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]
+        text-white 
+        shadow-[0_0_20px_-5px_var(--accent-glow)]
+        hover:shadow-[0_0_25px_-5px_var(--accent-glow)]
+        hover:brightness-110
+        border border-transparent
+      `,
+            secondary: `
+        bg-white/5 
+        hover:bg-white/10 
+        text-white 
+        border border-white/10
+        backdrop-blur-sm
+      `,
+            ghost: 'bg-transparent hover:bg-white/5 text-[var(--accent-primary)]',
+            danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
         };
 
         const sizes = {
-            sm: 'h-8 px-4 text-xs var(--radius-sm)',
-            md: 'h-12 px-6 text-sm var(--radius-md)',
-            lg: 'h-14 px-8 text-base var(--radius-md)',
+            sm: 'h-8 px-3 text-xs rounded-[var(--radius-sm)]',
+            md: 'h-10 px-5 text-sm rounded-[var(--radius-sm)]',
+            lg: 'h-12 px-8 text-base rounded-[var(--radius-md)]',
         };
 
         const width = fullWidth ? 'w-full' : '';

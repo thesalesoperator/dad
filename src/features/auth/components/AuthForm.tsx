@@ -48,16 +48,13 @@ export function AuthForm() {
     };
 
     return (
-        <Card className="w-full max-w-md backdrop-blur-sm bg-opacity-90 relative overflow-hidden group">
-            {/* Decorative Glow */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-[var(--color-primary)] shadow-[0_0_20px_var(--color-primary)]" />
-
-            <div className="mb-8 text-center">
-                <h2 className="text-3xl font-[var(--font-display)] mb-2">
-                    {mode === 'signin' ? 'Welcome Back' : 'Join the Ranks'}
+        <Card className="w-full max-w-md relative overflow-hidden">
+            <div className="mb-8 text-center space-y-2">
+                <h2 className="text-2xl font-bold tracking-tight text-white">
+                    {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
                 </h2>
-                <p className="text-[var(--color-text-muted)] text-sm uppercase tracking-widest font-bold">
-                    {mode === 'signin' ? 'Ready to work?' : 'Start your journey'}
+                <p className="text-[var(--text-secondary)] text-sm">
+                    {mode === 'signin' ? 'Enter your credentials to access the terminal.' : 'Join the protocol to begin training.'}
                 </p>
             </div>
 
@@ -96,9 +93,9 @@ export function AuthForm() {
                         setMode(mode === 'signin' ? 'signup' : 'signin');
                         setMessage(null);
                     }}
-                    className="text-xs text-[var(--color-text-muted)] hover:text-white uppercase tracking-widest transition-colors font-bold"
+                    className="text-sm text-[var(--accent-primary)] hover:text-[var(--accent-secondary)] transition-colors font-medium"
                 >
-                    {mode === 'signin' ? "Need an account? Sign Up" : "Already have an account? Sign In"}
+                    {mode === 'signin' ? "No account? Initialize Protocol" : "Existing user? Access Terminal"}
                 </button>
             </div>
         </Card>

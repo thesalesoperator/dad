@@ -27,49 +27,54 @@ export default async function WorkoutPage({ params }: { params: { id: string } }
     const exercises = workout.workout_exercises.sort((a: any, b: any) => a.order - b.order);
 
     return (
-        <div className="min-h-screen bg-[var(--color-dark)] p-6 pb-32">
-            <Link href="/dashboard" className="text-[var(--color-text-muted)] font-bold text-xs uppercase mb-6 block hover:text-white transition-colors">
-                ← Abort Mission
+        <div className="min-h-screen p-6 pb-32 relative">
+            {/* Background Ambience */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--accent-primary)] rounded-full blur-[120px] opacity-10 pointer-events-none" />
+
+            <Link href="/dashboard" className="text-[var(--text-secondary)] font-medium text-xs uppercase mb-6 block hover:text-white transition-colors tracking-wide">
+                ← Return to Command
             </Link>
 
-            <header className="mb-8">
-                <h1 className="text-5xl text-white mb-2 leading-[0.85]">{workout.name}</h1>
+            <header className="mb-8 relative z-10">
+                <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">{workout.name}</h1>
                 <div className="flex gap-2">
-                    <span className="px-3 py-1 bg-[var(--color-surface)] rounded-full text-xs font-bold text-[var(--color-primary)] uppercase border border-[var(--color-primary)]">
+                    <span className="px-3 py-1 bg-white/5 rounded-full text-xs font-semibold text-[var(--accent-primary)] uppercase border border-white/10 backdrop-blur-sm">
                         {exercises.length} Exercises
                     </span>
-                    <span className="px-3 py-1 bg-[var(--color-surface)] rounded-full text-xs font-bold text-[var(--color-accent)] uppercase border border-[var(--color-accent)]">
+                    <span className="px-3 py-1 bg-white/5 rounded-full text-xs font-semibold text-[var(--accent-secondary)] uppercase border border-white/10 backdrop-blur-sm">
                         {Math.round(exercises.length * 5)} Min Est.
                     </span>
                 </div>
             </header>
 
-            <div className="space-y-6">
+            <div className="space-y-6 relative z-10">
                 {exercises.map((item: any, index: number) => (
-                    <Card key={item.id} className="relative group overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl font-[var(--font-display)] text-[var(--color-primary)] pointer-events-none">
+                    <Card key={item.id} className="relative group">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 text-8xl font-bold text-white pointer-events-none select-none">
                             {index + 1}
                         </div>
 
                         <div className="relative z-10">
-                            <h3 className="text-2xl text-white mb-1">{item.exercise.name}</h3>
-                            <div className="flex gap-4 text-sm font-bold text-[var(--color-text-muted)] uppercase mb-4">
+                            <h3 className="text-xl font-semibold text-white mb-1">{item.exercise.name}</h3>
+                            <div className="flex gap-4 text-xs font-medium text-[var(--text-secondary)] uppercase mb-4 tracking-wide">
                                 <span>{item.sets} Sets</span>
                                 <span>{item.reps} Reps</span>
                                 <span>{item.rest_seconds}s Rest</span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
-                                <div className="bg-[#1C1C1E] rounded-[var(--radius-sm)] p-3 text-center border border-[#3A3A3C]">
-                                    <span className="block text-[10px] text-[var(--color-text-muted)] uppercase font-bold">LBS</span>
-                                    <span className="text-xl text-white font-[var(--font-display)]">-</span>
+                            <div className="grid grid-cols-[1fr,1fr,auto] gap-3 items-center">
+                                <div className="bg-white/5 rounded-[var(--radius-sm)] p-3 text-center border border-white/10 focus-within:border-[var(--accent-primary)] transition-colors">
+                                    <span className="block text-[10px] text-[var(--text-secondary)] uppercase font-semibold mb-1">LBS</span>
+                                    <input type="number" placeholder="-" className="w-full bg-transparent text-center text-lg text-white font-medium outline-none placeholder:text-white/20" />
                                 </div>
-                                <div className="bg-[#1C1C1E] rounded-[var(--radius-sm)] p-3 text-center border border-[#3A3A3C]">
-                                    <span className="block text-[10px] text-[var(--color-text-muted)] uppercase font-bold">REPS</span>
-                                    <span className="text-xl text-white font-[var(--font-display)]">-</span>
+                                <div className="bg-white/5 rounded-[var(--radius-sm)] p-3 text-center border border-white/10 focus-within:border-[var(--accent-primary)] transition-colors">
+                                    <span className="block text-[10px] text-[var(--text-secondary)] uppercase font-semibold mb-1">REPS</span>
+                                    <input type="number" placeholder="-" className="w-full bg-transparent text-center text-lg text-white font-medium outline-none placeholder:text-white/20" />
                                 </div>
-                                <button className="h-full px-4 bg-[var(--color-surface)] border border-[#3A3A3C] rounded-[var(--radius-sm)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-black transition-colors">
-                                    ✓
+                                <button className="h-full aspect-square bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-[var(--radius-sm)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all flex items-center justify-center">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -77,8 +82,8 @@ export default async function WorkoutPage({ params }: { params: { id: string } }
                 ))}
             </div>
 
-            <div className="fixed bottom-6 left-6 right-6">
-                <Button fullWidth size="lg" className="shadow-[0_0_40px_rgba(255,59,48,0.5)] border-2 border-[var(--color-primary)]">
+            <div className="fixed bottom-6 left-6 right-6 z-20">
+                <Button fullWidth size="lg" className="shadow-[0_0_40px_-10px_var(--accent-glow)]">
                     COMPLETE SESSION
                 </Button>
             </div>

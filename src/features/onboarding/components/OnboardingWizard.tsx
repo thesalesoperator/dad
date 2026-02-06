@@ -81,19 +81,17 @@ export function OnboardingWizard() {
     const currentStep = STEPS[step];
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[var(--color-dark)]">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
             {/* Background Ambience */}
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[150px] opacity-10 animate-pulse" />
-            </div>
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[var(--accent-primary)] rounded-full blur-[150px] opacity-10 animate-pulse pointer-events-none" />
 
             <div className="w-full max-w-md z-10">
                 <div className="mb-8 flex justify-between items-end">
                     <div>
-                        <h1 className="text-4xl text-white mb-1">{currentStep.title}</h1>
-                        <p className="text-[var(--color-text-muted)] font-bold tracking-widest text-xs uppercase">{currentStep.subtitle}</p>
+                        <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">{currentStep.title}</h1>
+                        <p className="text-[var(--text-secondary)] font-medium tracking-wide text-xs uppercase">{currentStep.subtitle}</p>
                     </div>
-                    <span className="text-[var(--color-primary)] font-bold text-xl">{step + 1}/{STEPS.length}</span>
+                    <span className="text-[var(--accent-primary)] font-bold text-lg">{step + 1}/{STEPS.length}</span>
                 </div>
 
                 <Card className="mb-8">
@@ -134,10 +132,10 @@ export function OnboardingWizard() {
                                     <button
                                         key={level}
                                         onClick={() => setData({ ...data, experience: level })}
-                                        className={`p-4 rounded-[var(--radius-md)] border-2 transition-all uppercase tracking-widest font-bold text-left
+                                        className={`p-4 rounded-[var(--radius-md)] border transition-all uppercase tracking-wide font-bold text-left
                       ${data.experience === level
-                                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                                                : 'border-[#2C2C2E] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-text-muted)]'
+                                                ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] shadow-[0_0_15px_-5px_var(--accent-glow)]'
+                                                : 'border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/10'
                                             }`}
                                     >
                                         {level}
@@ -147,15 +145,15 @@ export function OnboardingWizard() {
                         )}
 
                         {step === 3 && (
-                            <div className="space-y-4">
-                                <p className="text-white text-center text-6xl font-[var(--font-display)]">{data.daysPerWeek} DAYS</p>
+                            <div className="space-y-6">
+                                <p className="text-white text-center text-5xl font-bold">{data.daysPerWeek} DAYS</p>
                                 <input
                                     type="range"
                                     min="2"
                                     max="6"
                                     value={data.daysPerWeek}
                                     onChange={(e) => setData({ ...data, daysPerWeek: parseInt(e.target.value) })}
-                                    className="w-full accent-[var(--color-primary)] h-2 bg-[#2C2C2E] rounded-lg appearance-none cursor-pointer"
+                                    className="w-full accent-[var(--accent-primary)] h-2 bg-white/10 rounded-lg appearance-none cursor-pointer hover:bg-white/20 transition-colors"
                                 />
                             </div>
                         )}
@@ -166,10 +164,10 @@ export function OnboardingWizard() {
                                     <button
                                         key={goal}
                                         onClick={() => setData({ ...data, goal })}
-                                        className={`p-4 rounded-[var(--radius-md)] border-2 transition-all uppercase tracking-widest font-bold text-left
+                                        className={`p-4 rounded-[var(--radius-md)] border transition-all uppercase tracking-wide font-bold text-left
                     ${data.goal === goal
-                                                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-black'
-                                                : 'border-[#2C2C2E] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-text-muted)]'
+                                                ? 'border-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] shadow-[0_0_15px_-5px_rgba(129,140,248,0.5)]'
+                                                : 'border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/10'
                                             }`}
                                     >
                                         {goal === 'general' ? 'GENERAL FITNESS' : goal}

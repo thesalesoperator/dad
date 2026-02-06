@@ -1,30 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Brand Colors - High Energy */
-  --color-primary: #FF3B30; /* Energetic Red */
-  --color-accent: #D4F442;   /* Acid Green for highlights */
-  --color-dark: #0A0A0A;     /* Deepest Black */
-  --color-surface: #1C1C1E;  /* Dark Gray Surface */
-  --color-text: #FFFFFF;
-  --color-text-muted: #8E8E93;
-  
-  /* Spacing & Layout */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 3rem;
-  
-  /* Typography */
-  --font-display: 'Bebas Neue', display;
-  --font-body: 'Manrope', sans-serif;
-  
-  /* UI Effects */
-  --radius-sm: 4px;
-  --radius-md: 12px;
+  /* Modern SaaS Palette */
+  --bg-dark: #0f172a;
+  /* Slate 900 */
+  --bg-darker: #020617;
+  /* Slate 950 */
+
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-surface: rgba(255, 255, 255, 0.03);
+  --glass-highlight: rgba(255, 255, 255, 0.1);
+
+  --accent-primary: #38bdf8;
+  /* Sky 400 */
+  --accent-secondary: #818cf8;
+  /* Indigo 400 */
+  --accent-glow: rgba(56, 189, 248, 0.5);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+
+  /* Layout */
+  --radius-sm: 8px;
+  --radius-md: 16px;
   --radius-lg: 24px;
-  --shadow-glow: 0 0 20px rgba(255, 59, 48, 0.3);
+
+  --font-sans: 'Inter', sans-serif;
 }
 
 * {
@@ -34,24 +35,65 @@
 }
 
 body {
-  background-color: var(--color-dark);
-  color: var(--color-text);
-  font-family: var(--font-body);
+  background-color: var(--bg-darker);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  position: relative;
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  line-height: 0.9;
+/* Background Gradients/Orbs */
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -10%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 button {
   cursor: pointer;
   border: none;
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-family: var(--font-sans);
+}
+
+/* Utility for Glass inputs autofill fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+  -webkit-text-fill-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
