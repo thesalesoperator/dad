@@ -1,11 +1,23 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { WorkoutRecorder } from '@/features/workouts/components/WorkoutRecorder';
+import WorkoutClient from './WorkoutClient';
+
+const isMobile = process.env.NEXT_PUBLIC_MOBILE === 'true';
 
 export default async function WorkoutPage({ params }: { params: { id: string } }) {
+    if (isMobile) {
+        return <WorkoutClient />;
+    }
+
+    const { createClient } = await import('@/lib/supabase/server');
+    const { redirect } = await import('next/navigation');
+    const { getProgressionRecommendations } = await import('@/features/workouts/actions/computeProgression');
+
     const supabase = await createClient();
     const { id } = await params;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { redirect('/'); return; }
 
     const { data: workout } = await supabase
         .from('workouts')
@@ -22,6 +34,12 @@ export default async function WorkoutPage({ params }: { params: { id: string } }
     if (!workout) return <div className="min-h-screen flex items-center justify-center text-white">Workout not found</div>;
 
     const exercises = workout.workout_exercises.sort((a: any, b: any) => a.order - b.order);
+
+    // Fetch progression recommendations for each exercise
+    const exerciseIds = exercises.map((e: any) => e.exercise?.id).filter(Boolean);
+    const progressionData = exerciseIds.length > 0
+        ? await getProgressionRecommendations(user.id, exerciseIds)
+        : {};
 
     return (
         <div className="min-h-screen p-4 sm:p-6 lg:p-8 relative">
@@ -41,10 +59,15 @@ export default async function WorkoutPage({ params }: { params: { id: string } }
                     <span className="px-2 sm:px-3 py-1 bg-white/5 rounded-full text-[10px] sm:text-xs font-semibold text-[var(--accent-secondary)] uppercase border border-white/10 backdrop-blur-sm">
                         ~{Math.round(exercises.length * 5)} Min
                     </span>
+                    {Object.keys(progressionData).length > 0 && (
+                        <span className="px-2 sm:px-3 py-1 bg-[var(--accent-tertiary)]/10 rounded-full text-[10px] sm:text-xs font-semibold text-[var(--accent-tertiary)] uppercase border border-[var(--accent-tertiary)]/20 backdrop-blur-sm">
+                            AI Loaded
+                        </span>
+                    )}
                 </div>
             </header>
 
-            <WorkoutRecorder workout={workout} exercises={exercises} />
+            <WorkoutRecorder workout={workout} exercises={exercises} progressionData={progressionData} />
         </div>
     );
 }

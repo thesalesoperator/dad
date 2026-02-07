@@ -1,4 +1,7 @@
+'use client';
+
 import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { hapticImpact } from '@/lib/native/haptics';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'neon';
@@ -71,6 +74,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 ref={ref}
                 className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${width} ${className}`}
                 {...props}
+                onClick={(e) => {
+                    hapticImpact(size === 'lg' ? 'medium' : 'light');
+                    props.onClick?.(e);
+                }}
             >
                 {/* Shimmer effect on primary button */}
                 {variant === 'primary' && (

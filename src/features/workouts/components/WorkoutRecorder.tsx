@@ -9,12 +9,21 @@ import { ExerciseSwap } from '@/components/ui/ExerciseSwap';
 import { ExerciseInfo } from '@/components/ui/ExerciseInfo';
 import { RestTimer } from '@/components/ui/RestTimer';
 import { RPESelector } from '@/components/ui/RPESelector';
+import { PRCelebration } from '@/components/ui/PRCelebration';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { hapticImpact, hapticNotification, hapticSelection } from '@/lib/native/haptics';
+import { isNative } from '@/lib/native/platform';
 
 interface WorkoutRecorderProps {
     workout: any;
     exercises: any[];
+    progressionData?: Record<string, {
+        recommended_weight: number;
+        recommended_reps: string;
+        recommendation_type: string;
+        reason: string;
+    }>;
 }
 
 interface AlternativeExercise {
@@ -23,14 +32,38 @@ interface AlternativeExercise {
     muscle_group: string;
 }
 
-export function WorkoutRecorder({ workout, exercises: initialExercises }: WorkoutRecorderProps) {
+interface PRData {
+    exercise_name: string;
+    new_weight: number;
+    previous_best: number;
+    reps: number;
+    improvement: number;
+}
+
+export function WorkoutRecorder({ workout, exercises: initialExercises, progressionData = {} }: WorkoutRecorderProps) {
     const [loading, setLoading] = useState(false);
     const [exercises, setExercises] = useState(initialExercises);
     const [alternatives, setAlternatives] = useState<Record<string, AlternativeExercise[]>>({});
+    const [showPRCelebration, setShowPRCelebration] = useState(false);
+    const [prResults, setPrResults] = useState<PRData[]>([]);
     const router = useRouter();
     const supabase = createClient();
 
-    const [logs, setLogs] = useState<Record<string, Record<number, { weight: string, reps: string, rpe?: number }>>>({});
+    const [logs, setLogs] = useState<Record<string, Record<number, { weight: string, reps: string, rpe?: number }>>>(() => {
+        // Pre-fill weights from progression recommendations
+        const initial: Record<string, Record<number, { weight: string, reps: string, rpe?: number }>> = {};
+        for (const item of initialExercises) {
+            const rec = progressionData[item.exercise?.id];
+            if (rec && rec.recommended_weight > 0) {
+                const sets: Record<number, { weight: string; reps: string }> = {};
+                for (let s = 1; s <= (item.sets || 3); s++) {
+                    sets[s] = { weight: String(rec.recommended_weight), reps: '' };
+                }
+                initial[item.id] = sets;
+            }
+        }
+        return initial;
+    });
     const [notes, setNotes] = useState<Record<string, string>>({});
     const [showTimer, setShowTimer] = useState(false);
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -139,6 +172,7 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
             const currentSet = newLogs[exerciseId]?.[setNumber];
             if (currentSet?.weight && currentSet?.reps) {
                 setShowTimer(true);
+                hapticImpact('medium');
             }
 
             return newLogs;
@@ -146,6 +180,7 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
     };
 
     const handleRPEChange = useCallback((exerciseId: string, setNumber: number, rpe: number) => {
+        hapticSelection();
         setLogs(prev => ({
             ...prev,
             [exerciseId]: {
@@ -173,6 +208,11 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
 
             if (sessionError) throw sessionError;
 
+            // Update last_workout_at on user profile
+            await supabase.from('users').update({
+                last_workout_at: new Date().toISOString()
+            }).eq('id', user.id);
+
             interface SetLog {
                 user_id: string;
                 workout_id: string;
@@ -180,6 +220,7 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                 set_number: number;
                 weight: number;
                 reps_completed: number;
+                rpe: number | null;
             }
             const setLogsToInsert: SetLog[] = [];
 
@@ -196,7 +237,8 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                             exercise_id: exercise.exercise.id,
                             set_number: i,
                             weight: parseFloat(setLog.weight || '0'),
-                            reps_completed: parseInt(setLog.reps || '0')
+                            reps_completed: parseInt(setLog.reps || '0'),
+                            rpe: setLog.rpe ?? null
                         });
                     }
                 }
@@ -207,8 +249,35 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
                 if (logsError) throw logsError;
             }
 
-            router.push('/dashboard');
-            router.refresh();
+            // --- Progressive Overload & PR Detection ---
+            // Use client-side actions on native, server actions on web
+            let progressionResults, prData;
+            if (isNative()) {
+                const { computeProgressionClient } = await import('@/features/workouts/actions/computeProgression.client');
+                const { detectPRsClient } = await import('@/features/workouts/actions/streaksAndPRs.client');
+                [progressionResults, prData] = await Promise.all([
+                    computeProgressionClient(user.id, workout.id),
+                    detectPRsClient(user.id, workout.id)
+                ]);
+            } else {
+                const { computeProgression } = await import('@/features/workouts/actions/computeProgression');
+                const { detectPRs } = await import('@/features/workouts/actions/streaksAndPRs');
+                [progressionResults, prData] = await Promise.all([
+                    computeProgression(user.id, workout.id),
+                    detectPRs(user.id, workout.id)
+                ]);
+            }
+
+            // If PRs detected, show celebration before redirecting
+            if (prData.length > 0) {
+                hapticNotification('success');
+                setPrResults(prData);
+                setShowPRCelebration(true);
+            } else {
+                hapticNotification('success');
+                router.push('/dashboard');
+                router.refresh();
+            }
         } catch (error) {
             console.error('Failed to save session:', error);
             alert('Failed to save session. Check console.');
@@ -217,162 +286,202 @@ export function WorkoutRecorder({ workout, exercises: initialExercises }: Workou
         }
     };
 
+    const handlePRDismiss = () => {
+        setShowPRCelebration(false);
+        router.push('/dashboard');
+        router.refresh();
+    };
+
     return (
-        <div className="space-y-5 sm:space-y-8 relative z-10 pb-32 sm:pb-28">
-            {exercises.map((item: any, index: number) => (
-                <div
-                    key={item.id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                    <Card variant="glass" className="relative group">
-                        {/* Exercise Number Watermark */}
-                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-white/[0.03] flex items-center justify-center">
-                            <span className="text-2xl sm:text-3xl font-bold text-white/10 font-mono">{index + 1}</span>
-                        </div>
+        <>
+            {showPRCelebration && prResults.length > 0 && (
+                <PRCelebration prs={prResults} onDismiss={handlePRDismiss} />
+            )}
 
-                        <div className="relative z-10">
-                            {/* Exercise Header */}
-                            <div className="flex justify-between items-start mb-2 pr-12 sm:pr-16">
-                                <div className="flex items-start gap-2">
-                                    <div>
-                                        <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{item.exercise.name}</h3>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="px-2 py-0.5 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-full text-[var(--accent-primary)] text-[10px] sm:text-xs font-mono font-medium tracking-wide">
-                                                {item.sets} × {item.reps}
-                                            </span>
-                                            <span className="text-[var(--text-tertiary)] text-[10px] sm:text-xs uppercase tracking-wider">
-                                                {item.exercise.muscle_group}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <ExerciseInfo
-                                        name={item.exercise.name}
-                                        muscleGroup={item.exercise.muscle_group}
-                                        rationale={item.rationale}
-                                    />
+            <div className="space-y-5 sm:space-y-8 relative z-10 pb-32 sm:pb-28">
+                {exercises.map((item: any, index: number) => {
+                    const rec = progressionData[item.exercise?.id];
+                    return (
+                        <div
+                            key={item.id}
+                            className="animate-slide-up"
+                            style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                            <Card variant="glass" className="relative group">
+                                {/* Exercise Number Watermark */}
+                                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-white/[0.03] flex items-center justify-center">
+                                    <span className="text-2xl sm:text-3xl font-bold text-white/10 font-mono">{index + 1}</span>
                                 </div>
-                                <ExerciseSwap
-                                    currentExercise={item.exercise}
-                                    alternatives={alternatives[item.exercise.id] || []}
-                                    onSwap={(newId) => handleSwap(item.id, item.exercise.id, newId)}
-                                />
-                            </div>
 
-                            {/* Notes Input */}
-                            <div className="mb-5 sm:mb-6">
-                                <VoiceNoteInput
-                                    value={notes[item.id] || ''}
-                                    onChange={(val) => handleNoteChange(item.id, val)}
-                                    placeholder="Notes: equipment, tempo, form cues..."
-                                />
-                            </div>
-
-                            {/* Sets Grid */}
-                            <div className="space-y-3 sm:space-y-4">
-                                {Array.from({ length: item.sets }).map((_, setIndex) => {
-                                    const setNum = setIndex + 1;
-                                    const currentLog = logs[item.id]?.[setNum];
-                                    const isComplete = currentLog?.weight && currentLog?.reps;
-                                    return (
-                                        <div key={setNum} className="space-y-2">
-                                            <div
-                                                className={`grid grid-cols-[auto,1fr,1fr] gap-3 sm:gap-4 items-center p-2 sm:p-3 rounded-xl transition-all ${isComplete
-                                                    ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
-                                                    : 'bg-white/[0.02] border border-transparent'
-                                                    }`}
-                                            >
-                                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold font-mono transition-all ${isComplete
-                                                    ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
-                                                    : 'bg-white/5 text-[var(--text-tertiary)]'
-                                                    }`}>
-                                                    {isComplete ? (
-                                                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                        </svg>
-                                                    ) : setNum}
+                                <div className="relative z-10">
+                                    {/* Exercise Header */}
+                                    <div className="flex justify-between items-start mb-2 pr-12 sm:pr-16">
+                                        <div className="flex items-start gap-2">
+                                            <div>
+                                                <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{item.exercise.name}</h3>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="px-2 py-0.5 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-full text-[var(--accent-primary)] text-[10px] sm:text-xs font-mono font-medium tracking-wide">
+                                                        {item.sets} × {item.reps}
+                                                    </span>
+                                                    <span className="text-[var(--text-tertiary)] text-[10px] sm:text-xs uppercase tracking-wider">
+                                                        {item.exercise.muscle_group}
+                                                    </span>
                                                 </div>
-
-                                                <VoiceInput
-                                                    label="LBS"
-                                                    value={currentLog?.weight || ''}
-                                                    onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
-                                                    placeholder="—"
-                                                />
-
-                                                <VoiceInput
-                                                    label="REPS"
-                                                    value={currentLog?.reps || ''}
-                                                    onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
-                                                    placeholder={item.reps}
-                                                />
                                             </div>
+                                            <ExerciseInfo
+                                                name={item.exercise.name}
+                                                muscleGroup={item.exercise.muscle_group}
+                                                rationale={item.rationale}
+                                            />
+                                        </div>
+                                        <ExerciseSwap
+                                            currentExercise={item.exercise}
+                                            alternatives={alternatives[item.exercise.id] || []}
+                                            onSwap={(newId) => handleSwap(item.id, item.exercise.id, newId)}
+                                        />
+                                    </div>
 
-                                            {/* RPE Selector - shows after set is complete */}
-                                            {isComplete && (
-                                                <div className="pl-11 sm:pl-14 pr-2 animate-slide-up">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[var(--text-tertiary)] text-[10px] uppercase tracking-wider">RPE:</span>
-                                                        <RPESelector
-                                                            value={currentLog?.rpe}
-                                                            onChange={(rpe) => handleRPEChange(item.id, setNum, rpe)}
-                                                            compact
-                                                        />
-                                                    </div>
-                                                </div>
+                                    {/* Progression Suggestion Badge */}
+                                    {rec && (
+                                        <div className={`mb-4 px-3 py-2 rounded-xl border backdrop-blur-sm suggestion-badge ${rec.recommendation_type === 'increase_weight'
+                                            ? 'bg-[var(--accent-tertiary)]/10 border-[var(--accent-tertiary)]/25 text-[var(--accent-tertiary)]'
+                                            : rec.recommendation_type === 'deload'
+                                                ? 'bg-[var(--accent-warning)]/10 border-[var(--accent-warning)]/25 text-[var(--accent-warning)]'
+                                                : rec.recommendation_type === 'maintain'
+                                                    ? 'bg-white/5 border-white/10 text-[var(--text-secondary)]'
+                                                    : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/25 text-[var(--accent-primary)]'
+                                            }`}>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">
+                                                    {rec.recommendation_type === 'increase_weight' ? '↑' :
+                                                        rec.recommendation_type === 'deload' ? '↓' :
+                                                            rec.recommendation_type === 'maintain' ? '→' : '↗'}
+                                                </span>
+                                                <span className="text-xs font-medium">{rec.reason}</span>
+                                            </div>
+                                            {rec.recommendation_type === 'increase_weight' && (
+                                                <p className="text-[10px] mt-1 opacity-70 font-mono">
+                                                    Suggested: {rec.recommended_weight} lbs
+                                                </p>
                                             )}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </Card>
+                                    )}
 
-                    {/* Rest Timer - shows between exercises */}
-                    {showTimer && index < exercises.length - 1 && (
-                        <div className="mt-4 animate-slide-up">
-                            <RestTimer
-                                goal={goal}
-                                onComplete={() => setShowTimer(false)}
-                            />
-                        </div>
-                    )}
-                </div>
-            ))}
+                                    {/* Notes Input */}
+                                    <div className="mb-5 sm:mb-6">
+                                        <VoiceNoteInput
+                                            value={notes[item.id] || ''}
+                                            onChange={(val) => handleNoteChange(item.id, val)}
+                                            placeholder="Notes: equipment, tempo, form cues..."
+                                        />
+                                    </div>
 
-            {/* Complete Session Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 z-20">
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-darker)] via-[var(--bg-darker)]/95 to-transparent pointer-events-none" />
-                <div className="relative max-w-lg mx-auto">
-                    <Button
-                        fullWidth
-                        size="lg"
-                        className="group"
-                        onClick={handleComplete}
-                        disabled={loading}
-                    >
-                        <span className="flex items-center justify-center gap-3">
-                            {loading ? (
-                                <>
-                                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                                    </svg>
-                                    SAVING...
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    COMPLETE SESSION
-                                </>
+                                    {/* Sets Grid */}
+                                    <div className="space-y-3 sm:space-y-4">
+                                        {Array.from({ length: item.sets }).map((_, setIndex) => {
+                                            const setNum = setIndex + 1;
+                                            const currentLog = logs[item.id]?.[setNum];
+                                            const isComplete = currentLog?.weight && currentLog?.reps;
+                                            return (
+                                                <div key={setNum} className="space-y-2">
+                                                    <div
+                                                        className={`grid grid-cols-[auto,1fr,1fr] gap-3 sm:gap-4 items-center p-2 sm:p-3 rounded-xl transition-all ${isComplete
+                                                            ? 'bg-[var(--accent-tertiary)]/5 border border-[var(--accent-tertiary)]/20'
+                                                            : 'bg-white/[0.02] border border-transparent'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold font-mono transition-all ${isComplete
+                                                            ? 'bg-[var(--accent-tertiary)]/20 text-[var(--accent-tertiary)] shadow-[0_0_15px_-5px_var(--accent-tertiary)]'
+                                                            : 'bg-white/5 text-[var(--text-tertiary)]'
+                                                            }`}>
+                                                            {isComplete ? (
+                                                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                                </svg>
+                                                            ) : setNum}
+                                                        </div>
+
+                                                        <VoiceInput
+                                                            label="LBS"
+                                                            value={currentLog?.weight || ''}
+                                                            onChange={(val) => handleLogChange(item.id, setNum, 'weight', val)}
+                                                            placeholder="—"
+                                                        />
+
+                                                        <VoiceInput
+                                                            label="REPS"
+                                                            value={currentLog?.reps || ''}
+                                                            onChange={(val) => handleLogChange(item.id, setNum, 'reps', val)}
+                                                            placeholder={item.reps}
+                                                        />
+                                                    </div>
+
+                                                    {/* RPE Selector - shows after set is complete */}
+                                                    {isComplete && (
+                                                        <div className="pl-11 sm:pl-14 pr-2 animate-slide-up">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[var(--text-tertiary)] text-[10px] uppercase tracking-wider">RPE:</span>
+                                                                <RPESelector
+                                                                    value={currentLog?.rpe}
+                                                                    onChange={(rpe) => handleRPEChange(item.id, setNum, rpe)}
+                                                                    compact
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* Rest Timer - shows between exercises */}
+                            {showTimer && index < exercises.length - 1 && (
+                                <div className="mt-4 animate-slide-up">
+                                    <RestTimer
+                                        goal={goal}
+                                        onComplete={() => setShowTimer(false)}
+                                    />
+                                </div>
                             )}
-                        </span>
-                    </Button>
+                        </div>
+                    );
+                })}
+
+                {/* Complete Session Button */}
+                <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 z-20">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-darker)] via-[var(--bg-darker)]/95 to-transparent pointer-events-none" />
+                    <div className="relative max-w-lg mx-auto">
+                        <Button
+                            fullWidth
+                            size="lg"
+                            className="group"
+                            onClick={handleComplete}
+                            disabled={loading}
+                        >
+                            <span className="flex items-center justify-center gap-3">
+                                {loading ? (
+                                    <>
+                                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                        </svg>
+                                        ANALYZING PERFORMANCE...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        COMPLETE SESSION
+                                    </>
+                                )}
+                            </span>
+                        </Button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
-

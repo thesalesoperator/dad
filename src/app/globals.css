@@ -384,3 +384,124 @@ input[type="number"] {
 .stagger-6 {
   animation-delay: 0.3s;
 }
+
+/* PR Celebration */
+@keyframes prParticleExplode {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx, 100px), var(--ty, -100px)) scale(0);
+  }
+}
+
+@keyframes bounceSlow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.pr-particle {
+  position: absolute;
+  border-radius: 50%;
+  --tx: calc((var(--random, 0.5) - 0.5) * 400px);
+  --ty: calc((var(--random, 0.5) - 0.5) * 400px);
+  animation: prParticleExplode 2s ease-out forwards;
+  pointer-events: none;
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 2s ease-in-out infinite;
+}
+
+.pr-title-glow {
+  text-shadow: 0 0 40px var(--accent-primary), 0 0 80px var(--accent-glow);
+}
+
+.pr-weight-glow {
+  text-shadow: 0 0 30px var(--accent-tertiary), 0 0 60px rgba(48, 209, 88, 0.3);
+}
+
+/* Activity Heatmap */
+.heatmap-cell {
+  transition: all 0.15s ease;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.4);
+  z-index: 10;
+}
+
+/* Progression suggestion badge */
+@keyframes suggestionPulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.suggestion-badge {
+  animation: suggestionPulse 2s ease-in-out infinite;
+}
+
+/* ========================================
+   NATIVE MOBILE — Safe Area & Keyboard
+   ======================================== */
+
+/* Use on containers that need safe area insets (notch, home indicator) */
+.safe-area-pad {
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+/* When the software keyboard is open, reduce bottom padding */
+body.keyboard-open .safe-area-pad {
+  padding-bottom: 0;
+}
+
+/* Standalone (installed PWA / Capacitor) adjustments */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  /* Prevent pull-to-refresh */
+  html {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  body {
+    overflow-y: auto;
+    height: 100%;
+  }
+}
+
+/* Hide scrollbar in native shells */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

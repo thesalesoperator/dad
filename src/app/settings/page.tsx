@@ -1,12 +1,20 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 import { SettingsForm } from '@/features/settings/components/SettingsForm';
+import SettingsClient from './SettingsClient';
+
+const isMobile = process.env.NEXT_PUBLIC_MOBILE === 'true';
 
 export default async function SettingsPage() {
+    if (isMobile) {
+        return <SettingsClient />;
+    }
+
+    const { createClient } = await import('@/lib/supabase/server');
+    const { redirect } = await import('next/navigation');
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) redirect('/');
+    if (!user) { redirect('/'); return; }
 
     const { data: profile } = await supabase
         .from('users')
@@ -14,7 +22,7 @@ export default async function SettingsPage() {
         .eq('id', user.id)
         .single();
 
-    if (!profile) redirect('/onboarding');
+    if (!profile) { redirect('/onboarding'); return; }
 
     return (
         <div className="min-h-screen p-4 sm:p-6 lg:p-8 relative">

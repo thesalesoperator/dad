@@ -1,6 +1,9 @@
-'use server';
+/**
+ * Client-side version of generateProgram for mobile (Capacitor) context.
+ * Identical logic to the server version but uses browser Supabase client.
+ */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 
 interface UserData {
     experience: 'beginner' | 'intermediate' | 'advanced';
@@ -11,13 +14,10 @@ interface UserData {
     gender?: 'male' | 'female' | 'prefer_not_to_say';
 }
 
-// Fallback goal/category → program mapping for backward compatibility and safety
 const GOAL_TO_DEFAULT_PROGRAM: Record<string, string> = {
-    // Legacy goal values
     'strength': 'starting_strength',
     'hypertrophy': 'modern_bodybuilding',
     'general': 'dad_bod_destroyer',
-    // New category values
     'bodybuilding': 'modern_bodybuilding',
     'power': 'plyometric_power',
     'endurance': 'muscular_endurance',
@@ -25,8 +25,8 @@ const GOAL_TO_DEFAULT_PROGRAM: Record<string, string> = {
     'athletic': 'functional_fitness',
 };
 
-export async function generateProgram(userId: string, userData: UserData) {
-    const supabase = await createClient();
+export async function generateProgramClient(userId: string, userData: UserData) {
+    const supabase = createClient();
 
     // 0. Clean up old workouts to prevent duplicates
     const { data: existingWorkouts } = await supabase
@@ -39,15 +39,12 @@ export async function generateProgram(userId: string, userData: UserData) {
         await supabase.from('workout_exercises').delete().in('workout_id', workoutIds);
         await supabase.from('logs').delete().in('workout_id', workoutIds);
         await supabase.from('workout_logs').delete().in('workout_id', workoutIds);
-        // Clean up progression data tied to this user (will be recomputed)
         await supabase.from('progression_recommendations').delete().eq('user_id', userId);
         await supabase.from('workouts').delete().eq('user_id', userId);
     }
 
-    // 1. Resolve which program to use
     const programSlug = userData.program_slug || GOAL_TO_DEFAULT_PROGRAM[userData.goal] || 'dad_bod_destroyer';
 
-    // 2. Fetch the training program definition
     const { data: program, error: programError } = await supabase
         .from('training_programs')
         .select('*')
@@ -58,8 +55,6 @@ export async function generateProgram(userId: string, userData: UserData) {
         throw new Error(`Program "${programSlug}" not found. ${programError?.message || ''}`);
     }
 
-    // 3. Fetch program workouts for this day count
-    // Find workouts with the closest matching days_per_week
     const { data: programWorkouts, error: pwError } = await supabase
         .from('program_workouts')
         .select('*, program_workout_exercises(*)')
@@ -70,37 +65,23 @@ export async function generateProgram(userId: string, userData: UserData) {
         throw new Error(`No workouts defined for program "${program.name}". ${pwError?.message || ''}`);
     }
 
-    // Filter workouts: find the best matching days_per_week config
-    // First, get all unique days_per_week values available
     const availableDayCounts = [...new Set(programWorkouts.map(pw => pw.days_per_week))].sort((a, b) => a - b);
-
-    // Find the closest matching day count that doesn't exceed user's preference
-    let targetDayCount = availableDayCounts[0]; // default to minimum
+    let targetDayCount = availableDayCounts[0];
     for (const dc of availableDayCounts) {
-        if (dc <= userData.days_per_week) {
-            targetDayCount = dc;
-        }
+        if (dc <= userData.days_per_week) targetDayCount = dc;
     }
 
-    // Filter to workouts for that day count
     let selectedWorkouts = programWorkouts.filter(pw => pw.days_per_week === targetDayCount);
-
-    // Trim to user's actual days_per_week if they want fewer
     if (selectedWorkouts.length > userData.days_per_week) {
         selectedWorkouts = selectedWorkouts.slice(0, userData.days_per_week);
     }
-
-    // If no workouts matched the filter (e.g., program only has one day count config),
-    // just take the first N workouts
     if (selectedWorkouts.length === 0) {
         selectedWorkouts = programWorkouts.slice(0, userData.days_per_week);
     }
 
-    // 4. Fetch all exercises for equipment matching
     const { data: allExercises } = await supabase.from('exercises').select('*');
     if (!allExercises || allExercises.length === 0) throw new Error('No exercises found in database');
 
-    // Filter by user equipment
     const userEquipment = new Set([...userData.equipment, 'bodyweight']);
     const availableExercises = allExercises.filter(ex => {
         if (!ex.equipment_type || ex.equipment_type.length === 0) return true;
@@ -109,10 +90,8 @@ export async function generateProgram(userId: string, userData: UserData) {
 
     if (availableExercises.length === 0) throw new Error('No exercises match your equipment profile');
 
-    // 5. Gender-aware rep adjustment
     const genderMultiplier = getGenderAdjustment(userData.gender);
 
-    // 6. Create workouts from program definition
     for (const programWorkout of selectedWorkouts) {
         const exercises = (programWorkout.program_workout_exercises || [])
             .sort((a: any, b: any) => a.order_num - b.order_num);
@@ -127,14 +106,9 @@ export async function generateProgram(userId: string, userData: UserData) {
         if (wError) throw wError;
 
         const workoutExercises = [];
-
         for (const templateEx of exercises) {
             const selectedEx = findBestMatch(templateEx.exercise_name, allExercises, availableExercises);
-
-            // Apply experience-based set adjustment
             const adjustedSets = adjustSetsForExperience(templateEx.default_sets, userData.experience);
-
-            // Apply gender rep adjustment
             const adjustedReps = genderMultiplier.adjustReps(templateEx.default_reps);
 
             workoutExercises.push({
@@ -145,8 +119,7 @@ export async function generateProgram(userId: string, userData: UserData) {
                 rest_seconds: templateEx.default_rest_seconds,
                 order: templateEx.order_num,
                 rationale: templateEx.rationale + (selectedEx.name !== templateEx.exercise_name
-                    ? ` (Substituted: ${selectedEx.name} based on equipment)`
-                    : '')
+                    ? ` (Substituted: ${selectedEx.name} based on equipment)` : '')
             });
         }
 
@@ -156,71 +129,47 @@ export async function generateProgram(userId: string, userData: UserData) {
 }
 
 function findBestMatch(targetName: string, allExercises: any[], availableExercises: any[]) {
-    // 1. Try exact match in available
     const exact = availableExercises.find(e => e.name.toLowerCase() === targetName.toLowerCase());
     if (exact) return exact;
-
-    // 2. Find canonical exercise info (to get muscle group)
     const canonical = allExercises.find(e => e.name.toLowerCase() === targetName.toLowerCase());
-
-    // 3. If canonical found, search for same muscle group in available
     if (canonical && canonical.muscle_group) {
         const muscleMatch = availableExercises.filter(e => e.muscle_group === canonical.muscle_group);
-
         if (muscleMatch.length > 0) {
             const keywords = targetName.toLowerCase().split(' ').filter(w =>
                 !['barbell', 'dumbbell', 'cable', 'machine', 'band'].includes(w)
             );
-
-            const nameMatch = muscleMatch.find(e =>
-                keywords.some(k => e.name.toLowerCase().includes(k))
-            );
-
+            const nameMatch = muscleMatch.find(e => keywords.some(k => e.name.toLowerCase().includes(k)));
             if (nameMatch) return nameMatch;
             return muscleMatch[0];
         }
     }
-
-    // 4. Fallback: Find ANY match by name similarity in available
     const fallbackMatch = availableExercises.find(e =>
         e.name.toLowerCase().includes(targetName.toLowerCase().split(' ')[0])
     );
-
     return fallbackMatch || availableExercises[0];
 }
 
 function adjustSetsForExperience(baseSets: number, experience: string): number {
     switch (experience) {
-        case 'beginner':
-            return Math.max(2, baseSets - 1); // Slightly less volume for beginners
-        case 'advanced':
-            return Math.min(6, baseSets + 1); // Extra volume for advanced lifters
-        default:
-            return baseSets; // Intermediate stays at program default
+        case 'beginner': return Math.max(2, baseSets - 1);
+        case 'advanced': return Math.min(6, baseSets + 1);
+        default: return baseSets;
     }
 }
 
 function getGenderAdjustment(gender?: string) {
-    // Research shows women can handle slightly higher rep ranges and recover faster
-    // These are DEFAULT adjustments — not prescriptive
     if (gender === 'female') {
         return {
             adjustReps: (reps: string) => {
-                // Bump rep ranges up by ~2 for female defaults
                 const match = reps.match(/^(\d+)-(\d+)$/);
                 if (match) {
                     const low = Math.min(parseInt(match[1]) + 2, 25);
                     const high = Math.min(parseInt(match[2]) + 2, 30);
                     return `${low}-${high}`;
                 }
-                // Single number or special format (e.g., "5/3/1", "20-30s")
                 return reps;
             }
         };
     }
-
-    // Default (male / prefer_not_to_say / undefined) — no adjustment
-    return {
-        adjustReps: (reps: string) => reps
-    };
+    return { adjustReps: (reps: string) => reps };
 }
